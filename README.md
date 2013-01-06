@@ -41,6 +41,21 @@ please consult exquarry.c
 
 will build and run the tests
 
+> make example
+
+builds an executable exquarry.out which prints some statistics about a given
+java source code
+
+## Notes
+
+* There is a hard limit on the size of individual slab. For any given slab, only
+the first 4096 bytes will be considered. The rest will be ignored.
+
+* The return value from a quarry_read should not be deleted. More over, it is
+intended to be copied immediately and freed (using quarry_freeSlab) before the
+next call to quarry_read. 
+
+
 ## TODO
 * add tests for UTF-8 identifiers
 * add comprehensive tests for c

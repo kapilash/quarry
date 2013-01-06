@@ -64,5 +64,6 @@ clean:
 	rm -f *.a
 	rm -f *.o
 	rm -f *.out
+	rm -f *.hi
 	rm -f KWStrGenerator
 
