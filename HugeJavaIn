@@ -1,0 +1,3807 @@
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.vmmagic.unboxed.Address;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * Interface of BootImage that is used to define object model classes.
+ */
+public interface BootImageInterface {
+
+  /**
+   * Allocate space in data portion of bootimage. Moral equivalent of
+   * memory managers allocating raw storage at runtime.
+   * @param size the number of bytes to allocate
+   * @param align the alignment requested; must be a power of 2.
+   * @param offset the offset at which the alignment is desired.
+   */
+  Address allocateDataStorage(int size, int align, int offset);
+
+  /**
+   * Allocate space in code portion of bootimage. Moral equivalent of
+   * memory managers allocating raw storage at runtime.
+   * @param size the number of bytes to allocate
+   * @param align the alignment requested; must be a power of 2.
+   * @param offset the offset at which the alignment is desired.
+   */
+  Address allocateCodeStorage(int size, int align, int offset);
+
+  /**
+   * Fill in 1 byte of bootimage.
+   *
+   * @param offset offset of target from start of image, in bytes
+   * @param value value to write
+   */
+  void setByte(Address offset, int value);
+
+  /**
+   * Fill in 2 bytes of bootimage.
+   *
+   * @param offset offset of target from start of image, in bytes
+   * @param value value to write
+   */
+  void setHalfWord(Address offset, int value);
+
+  /**
+   * Fill in 4 bytes of bootimage, as numeric.
+   *
+   * @param offset offset of target from start of image, in bytes
+   * @param value value to write
+   */
+  void setFullWord(Address offset, int value);
+
+  /**
+   * Fill in 4/8 bytes of bootimage, as object reference.
+   *
+   * @param offset offset of target from start of image, in bytes
+   * @param value value to write
+   * @param objField true if this word is an object field (as opposed
+   * to a static, or tib, or some other metadata)
+   * @param root Does this slot contain a possible reference into the heap? (objField must also be true)
+   */
+  void setAddressWord(Address offset, Word value, boolean objField, boolean root);
+
+  /**
+   * Fill in 4 bytes of bootimage, as null object reference.
+   *
+   * @param offset offset of target from start of image, in bytes
+   * @param objField true if this word is an object field (as opposed
+   * to a static, or tib, or some other metadata)
+   * @param root Does this slot contain a possible reference into the heap? (objField must also be true)
+   */
+  void setNullAddressWord(Address offset, boolean objField, boolean root);
+
+  /**
+   * Fill in 8 bytes of bootimage.
+   *
+   * @param offset offset of target from start of image, in bytes
+   * @param value value to write
+   */
+  void setDoubleWord(Address offset, long value);
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.runtime.Memory;
+
+/**
+ * State for the field layout engine.  Subtypes of this are closely
+ * tied to field layout schemes, and are generally defined in same.
+ *
+ * A FieldLayoutContext deals in an abstract offset space, where
+ * there is no header, and fields are laid out relative to 0.
+ *
+ * This abstract superclass looks after the total object size and
+ * alignment.
+ */
+public abstract class FieldLayoutContext implements SizeConstants {
+
+  /* *****************************************************************
+   *                         Constants
+   */
+  protected static final int OBJECT_SIZE_ALIGN = BYTES_IN_ADDRESS;
+
+  /* *****************************************************************
+  *                        Class fields
+  */
+
+  /** Alignment requirements.  */
+  private byte alignment = BYTES_IN_INT;
+
+  /** The size of the current object as laid out */
+  private int objectSize = 0;
+
+  /** Return the offset of a new field of the given size */
+  abstract int nextOffset(int size, boolean isReference);
+
+  /* *****************************************************************
+  *                        Initialization
+  */
+
+  /**
+   * Constructor for a (the) top-level object.
+   *
+   * @param alignment
+   */
+  protected FieldLayoutContext(byte alignment) {
+    this.alignment = alignment;
+  }
+
+  /**
+   * Constructor for an object with a superclass.  The superclass
+   * is used to initialize the layout.
+   *
+   * @param alignment
+   * @param superLayout
+   */
+  protected FieldLayoutContext(byte alignment, FieldLayoutContext superLayout) {
+    this.alignment = alignment;
+    if (superLayout != null) {
+      objectSize = superLayout.getObjectSize();
+    }
+  }
+
+  /* *****************************************************************
+   *                  Instance methods
+   */
+
+  /**
+   * Adjust alignment to the next highest value.  In Java, the only 2
+   * possibilities are int-aligned or long-aligned.
+   *
+   * @param fieldSize
+   */
+  protected void adjustAlignment(int fieldSize) {
+    alignment = (fieldSize == BYTES_IN_LONG) ? BYTES_IN_LONG : alignment;
+  }
+
+  /**
+   * @return the current alignment value
+   */
+  int getAlignment() {
+    return alignment;
+  }
+
+  /**
+   * @return The current size of the object (excluding header)
+   */
+  protected int getObjectSize() {
+    return objectSize;
+  }
+
+  /**
+   * Set the current size of the object (excluding header)
+   */
+  protected void setObjectSize(int size) {
+    objectSize = size;
+  }
+
+  /**
+   * Adjust the size of the object if necessary to accommodate a field.
+   *
+   * @param size The size occupied by data fields in the object.
+   */
+  protected void ensureObjectSize(int size) {
+    objectSize = size > objectSize ? Memory.alignUp(size, OBJECT_SIZE_ALIGN) : objectSize;
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.classloader.RVMClass;
+import org.jikesrvm.classloader.RVMField;
+import org.vmmagic.unboxed.Offset;
+
+/**
+ * This abstract class defines the interface for schemes that layout fields
+ * in an object.  Not header fields, (scalar) object fields.
+ *
+ * The field layout object encapsulates layout state.
+ */
+public abstract class FieldLayout implements SizeConstants {
+
+  /**
+   * Enable debugging
+   */
+  protected static final boolean DEBUG = false;
+
+  /** Whether to lay out 8byte values first in order to avoid some holes */
+  private final boolean largeFieldsFirst;
+
+  /** Lay out reference fields in a block */
+  private final boolean clusterReferenceFields;
+
+  public FieldLayout(boolean largeFieldsFirst, boolean clusterReferenceFields) {
+    this.largeFieldsFirst = largeFieldsFirst;
+    this.clusterReferenceFields = clusterReferenceFields;
+  }
+
+  /**
+   * Maximum of two integers
+   */
+  protected static int max(int x, int y) {
+    return (x > y) ? x : y;
+  }
+
+  /**
+   * Log base 2 of an integer
+   */
+  protected static int log2(int x) {
+    int logSize = 0;
+    while ((1 << logSize) < x) {
+      logSize += 1;
+    }
+    return logSize;
+  }
+
+  /*
+  * Abstract methods that determine the behaviour of a particular layout scheme
+  */
+
+  /**
+   * Return the appropriate layout context object for the given class.
+   *
+   * @param klass The class
+   * @return The layout context
+   */
+  protected abstract FieldLayoutContext getLayoutContext(RVMClass klass);
+
+  /**
+   * This is where a class gets laid out.  Differences in layout strategy
+   * are largely encapsulated in the layoutContext object.
+   *
+   * @param klass The class to lay out.
+   */
+  public void layoutInstanceFields(RVMClass klass) {
+    /*
+     * Determine available field slots from parent classes, and allocate
+     * a new context object for this class and its children.
+     */
+    FieldLayoutContext fieldLayout = getLayoutContext(klass);
+
+    // Preferred alignment of object - modified to reflect added fields
+    // New fields to be allocated for this object
+    RVMField[] fields = klass.getDeclaredFields();
+
+    if (DEBUG) {
+      VM.sysWriteln("Laying out: ", klass.toString());
+    }
+
+    /*
+    * Layout reference fields first pre-pass - This can help some
+    * GC schemes.
+    */
+    if (clusterReferenceFields) {
+      // For every field
+      for (RVMField field : fields) {
+        if (!field.isStatic() && !field.hasOffset()) {
+          if (field.isReferenceType()) {
+            layoutField(fieldLayout, klass, field, BYTES_IN_ADDRESS);
+          }
+        }
+      }
+    }
+
+    /*
+    * Layout 8byte values first pre-pass - do this to avoid unnecessary
+    * holes for object layouts such as an int followed by a long
+    */
+    if (largeFieldsFirst) {
+      // For every field
+      for (RVMField field : fields) {
+        // Should we allocate space in the object now?
+        if (!field.isStatic() && !field.hasOffset()) {
+          if (field.getSize() == BYTES_IN_LONG) {
+            layoutField(fieldLayout, klass, field, BYTES_IN_LONG);
+          }
+        }
+      }
+    }
+
+    for (RVMField field : fields) {                               // For every field
+      int fieldSize = field.getSize();                            // size of field
+      if (!field.isStatic() && !field.hasOffset()) {              // Allocate space in the object?
+        layoutField(fieldLayout, klass, field, fieldSize);
+      }
+    }
+    // JavaHeader requires objects to be int sized/aligned
+    if (VM.VerifyAssertions) VM._assert((fieldLayout.getObjectSize() & 0x3) == 0);
+
+    /* Update class to reflect changes */
+
+    updateClass(klass, fieldLayout);
+  }
+
+  /**
+   * Update the RVMClass with context info.
+   *
+   * @param klass
+   * @param fieldLayout
+   */
+  protected void updateClass(RVMClass klass, FieldLayoutContext fieldLayout) {
+    /*
+     * Save the new field layout.
+     */
+    klass.setFieldLayoutContext(fieldLayout);
+
+    klass.setInstanceSizeInternal(ObjectModel.computeScalarHeaderSize(klass) + fieldLayout.getObjectSize());
+    klass.setAlignment(fieldLayout.getAlignment());
+  }
+
+  /**
+   * Update a field to set its offset within the object.
+   *
+   * @param klass
+   * @param field
+   * @param offset
+   */
+  protected void setOffset(RVMClass klass, RVMField field, int offset) {
+
+    Offset fieldOffset;
+    if (offset >= 0) {
+      fieldOffset =
+          Offset.fromIntSignExtend(JavaHeader.objectStartOffset(klass) +
+                                   ObjectModel.computeScalarHeaderSize(klass) +
+                                   offset);
+    } else {
+      /* Negative offsets go before the header */
+      fieldOffset = Offset.fromIntSignExtend(JavaHeader.objectStartOffset(klass) + offset);
+    }
+    field.setOffset(fieldOffset);
+    if (DEBUG) {
+      VM.sysWrite("  field: ", field.toString());
+      VM.sysWriteln(" offset ", fieldOffset.toInt());
+    }
+  }
+
+  /**
+   * Lay out a given field.
+   *
+   * @param layout State for the layout process
+   * @param klass The class whose fields we're laying out.
+   * @param field The field we are laying out.
+   * @param fieldSize The size of the field.
+   */
+  protected void layoutField(FieldLayoutContext layout, RVMClass klass, RVMField field, int fieldSize) {
+    boolean isRef = field.isReferenceType();
+    setOffset(klass, field, layout.nextOffset(fieldSize, isRef));
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.classloader.RVMClass;
+import org.jikesrvm.runtime.Memory;
+
+/**
+ * Layout fields in an object, packt like sardines in a crushd tin box.
+ */
+public class FieldLayoutPacked extends FieldLayout implements SizeConstants {
+
+  /**
+   * Lay out an object, maintaining offsets of free slots of size 1,2,4 and 8
+   * bytes.
+   */
+  private static class LayoutContext extends FieldLayoutContext {
+    private static final int LOG_MAX_SLOT_SIZE = LOG_BYTES_IN_LONG;
+    private static final int MAX_SLOT_SIZE = (1 << LOG_MAX_SLOT_SIZE);
+
+    private short slot0;
+    private short slot1;
+    private short slot2;
+
+    /**
+     * Get the value for a given slot.
+     */
+    private short get(int logSize) {
+      switch (logSize) {
+        case 0: return slot0;
+        case 1: return slot1;
+        case 2: return slot2;
+        case 3: return (short)Memory.alignUp(getObjectSize(), MAX_SLOT_SIZE);
+        default: VM.sysFail("Invalid slot"); return -1;
+      }
+    }
+
+    /**
+     * Set the value for a given slot.
+     */
+    private void set(int logSize, int value) {
+      if (VM.VerifyAssertions) VM._assert(value >= 0 && value < Short.MAX_VALUE);
+      short shortValue = (short)value;
+      switch (logSize) {
+        case 0: slot0 = shortValue; break;
+        case 1: slot1 = shortValue; break;
+        case 2: slot2 = shortValue; break;
+        case 3: if (VM.VerifyAssertions) VM._assert(shortValue == 0);
+      }
+    }
+
+    /**
+     * Create a layout for an object without a superclass (ie j.l.Object).
+     *
+     * @param alignment
+     */
+    LayoutContext(byte alignment) {
+      this(alignment, null);
+    }
+
+    /**
+     * Create a layout for an object, initializing offsets from its
+     * superclass.
+     *
+     * @param alignment Current alignment of first field.
+     * @param superLayout Superclass layout context
+     */
+    LayoutContext(byte alignment, LayoutContext superLayout) {
+      super(alignment, superLayout);
+      if (superLayout != null) {
+        for (int i = 0; i < LOG_MAX_SLOT_SIZE; i++) {
+          set(i, superLayout.get(i));
+        }
+      }
+    }
+
+    /**
+     * Return the next available offset for a given size
+     *
+     * @param size Size of the field to be laid out.  Must be
+     * a power of 2.
+     */
+    @Override
+    int nextOffset(int size, boolean isReference) {
+      if (VM.VerifyAssertions) VM._assert((size & (size - 1)) == 0);  // Ensure =2^n
+      adjustAlignment(size);
+
+      /* Calculate the log of the size of the field */
+      int logSize = log2(size);
+      int result = 0;
+
+      /* Find a free slot */
+      for(int i = logSize; i <= LOG_MAX_SLOT_SIZE; i++) {
+        int slot = get(i);
+        if (slot != 0 || i == LOG_MAX_SLOT_SIZE) {
+          result = slot;
+          set(i, 0);
+          /* Set any holes we have created */
+          for (i = i - 1; i >= logSize; i--) {
+            if (VM.VerifyAssertions) VM._assert(get(i) == 0);
+            set(i, result + (1 << i));
+          }
+          break;
+        }
+      }
+
+      /* Make sure the field fits */
+      ensureObjectSize(result + size);
+
+      if (DEBUG) {
+        VM.sysWrite("  field: & offset ", result, " New object size = ", getObjectSize());
+        VM.sysWrite(" slots: ");
+        for(int i=0; i < LOG_MAX_SLOT_SIZE; i++) {
+          VM.sysWrite(get(i), i == LOG_MAX_SLOT_SIZE - 1 ? "" : ", ");
+        }
+        VM.sysWriteln();
+      }
+
+      /* Bounds check - scalar objects this size are impossible, surely ?? */
+      if (result >= Short.MAX_VALUE) {
+        VM.sysFail("Scalar class size exceeds offset width");
+      }
+
+      return result;
+    }
+  }
+
+  public FieldLayoutPacked(boolean largeFieldsFirst, boolean clusterReferenceFields) {
+    super(largeFieldsFirst, clusterReferenceFields);
+  }
+
+  /**
+   * @see FieldLayout#getLayoutContext(RVMClass)
+   */
+  @Override
+  protected FieldLayoutContext getLayoutContext(RVMClass klass) {
+    return new LayoutContext((byte) klass.getAlignment(), (LayoutContext) klass.getFieldLayoutContext());
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.classloader.RVMClass;
+
+public class FieldLayoutUnpacked extends FieldLayout implements SizeConstants {
+
+  private static class LayoutContext extends FieldLayoutContext {
+    private static final int NO_HOLE = -1;
+    int intHole = NO_HOLE;
+
+    LayoutContext(byte alignment) {
+      super(alignment);
+    }
+
+    LayoutContext(byte alignment, LayoutContext superLayout) {
+      super(alignment, superLayout);
+      if (superLayout != null) {
+        intHole = superLayout.intHole;
+      }
+    }
+
+    /** Return the next available offset for a given size */
+    @Override
+    int nextOffset(int size, boolean isReference) {
+      int objectSize = getObjectSize();
+      if (size == FieldLayoutUnpacked.BYTES_IN_DOUBLE) {
+        adjustAlignment(FieldLayoutUnpacked.BYTES_IN_DOUBLE);
+        if ((objectSize & 0x7) == 0) {
+          ensureObjectSize(objectSize + FieldLayoutUnpacked.BYTES_IN_DOUBLE);
+          return objectSize;
+        } else {
+          ensureObjectSize(objectSize + FieldLayoutUnpacked.BYTES_IN_DOUBLE + FieldLayoutUnpacked.BYTES_IN_INT);
+          intHole = objectSize;
+          return objectSize + FieldLayoutUnpacked.BYTES_IN_INT;
+        }
+      } else if (intHole >= 0) {
+        int result = intHole;
+        intHole = NO_HOLE;
+        return result;
+      } else {
+        ensureObjectSize(objectSize + FieldLayoutUnpacked.BYTES_IN_INT);
+        return objectSize;
+      }
+    }
+  }
+
+  public FieldLayoutUnpacked(boolean largeFieldsFirst, boolean clusterReferenceFields) {
+    super(largeFieldsFirst, clusterReferenceFields);
+  }
+
+  /**
+   * @param klass the class to layout
+   * @return The layout context
+   */
+  @Override
+  protected FieldLayoutContext getLayoutContext(RVMClass klass) {
+    return new LayoutContext((byte) klass.getAlignment(), (LayoutContext) klass.getFieldLayoutContext());
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.ArchitectureSpecific.CodeArray;
+import org.vmmagic.Intrinsic;
+import org.vmmagic.pragma.NonMoving;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.pragma.UninterruptibleNoWarn;
+
+/**
+ * This class represents an instance of an interface method table, at runtime it
+ * is an array with CodeArray elements.
+ */
+@NonMoving
+public final class IMT implements RuntimeTable<CodeArray> {
+
+  /**
+   * The backing data used during boot image writing.
+   */
+  private final CodeArray[] data;
+
+  /**
+   * Private constructor. Can not create instances.
+   */
+  private IMT() {
+    this.data = new CodeArray[TIBLayoutConstants.IMT_METHOD_SLOTS];
+  }
+
+  /**
+   * Return the backing array (for boot image writing)
+   */
+  public CodeArray[] getBacking() {
+    if (VM.VerifyAssertions) VM._assert(!VM.runningVM);
+    return data;
+  }
+
+  /**
+   * Create an IMT.
+   *
+   * @return The created IMT instance.
+   */
+  public static IMT allocate() {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return new IMT();
+  }
+
+  /**
+   * Get a TIB entry.
+   *
+   * @param index The index of the entry to get
+   * @return The value of that entry
+   */
+  @Intrinsic
+  @Uninterruptible
+  public CodeArray get(int index) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return data[index];
+  }
+
+  /**
+   * Set a TIB entry.
+   *
+   * @param index The index of the entry to set
+   * @param value The value to set the entry to.
+   */
+  @Intrinsic
+  @UninterruptibleNoWarn("Interruptible code not reachable at runtime")
+  public void set(int index, CodeArray value) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    data[index] = value;
+  }
+
+  /**
+   * Return the length of the TIB
+   */
+  @Intrinsic
+  @Uninterruptible
+  public int length() {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return data.length;
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.vmmagic.Intrinsic;
+import org.vmmagic.pragma.NonMoving;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.pragma.UninterruptibleNoWarn;
+
+/**
+ * This class represents an instance of an array of interface tables.
+ */
+@NonMoving
+public final class ITableArray implements RuntimeTable<ITable> {
+
+  /**
+   * The backing data used during boot image writing.
+   */
+  private final ITable[] backingData;
+
+  /**
+   * Private constructor. Can not create instances.
+   */
+  private ITableArray(int size) {
+    this.backingData = new ITable[size];
+  }
+
+  /**
+   * Return the backing array (for boot image writing)
+   */
+  public ITable[] getBacking() {
+    if (VM.VerifyAssertions) VM._assert(!VM.runningVM);
+    return backingData;
+  }
+
+  /**
+   * Create a new TIB of the specified size.
+   *
+   * @param size The size of the TIB
+   * @return The created TIB instance.
+   */
+  public static ITableArray allocate(int size) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return new ITableArray(size);
+  }
+
+  /**
+   * Get a TIB entry.
+   *
+   * @param index The index of the entry to get
+   * @return The value of that entry
+   */
+  @Intrinsic
+  @Uninterruptible
+  public ITable get(int index) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return backingData[index];
+  }
+
+  /**
+   * Set a TIB entry.
+   *
+   * @param index The index of the entry to set
+   * @param value The value to set the entry to.
+   */
+  @Intrinsic
+  @UninterruptibleNoWarn("Interruptible code not reachable at runtime")
+  public void set(int index, ITable value) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    backingData[index] = value;
+  }
+
+  /**
+   * Return the length of the TIB
+   */
+  @Intrinsic
+  @Uninterruptible
+  public int length() {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return backingData.length;
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.classloader.RVMClass;
+import org.jikesrvm.classloader.RVMType;
+import org.jikesrvm.ArchitectureSpecific.CodeArray;
+import org.vmmagic.Intrinsic;
+import org.vmmagic.pragma.Inline;
+import org.vmmagic.pragma.Interruptible;
+import org.vmmagic.pragma.NonMoving;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.pragma.UninterruptibleNoWarn;
+
+/**
+ * This class represents an instance of an interface table.
+ */
+@NonMoving
+public final class ITable implements RuntimeTable<Object> {
+
+  /**
+   * The backing data used during boot image writing.
+   */
+  private final Object[] data;
+
+  /**
+   * Private constructor. Can not create instances.
+   */
+  private ITable(int size) {
+    this.data = new Object[size];
+  }
+
+  /**
+   * Create a new ITable of the specified size.
+   *
+   * @param size The size of the ITable
+   * @return The created ITable instance.
+   */
+  public static ITable allocate(int size) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return new ITable(size);
+  }
+
+  /**
+   * Return the backing array (for boot image writing)
+   */
+  public Object[] getBacking() {
+    if (VM.VerifyAssertions) VM._assert(!VM.runningVM);
+    return data;
+  }
+
+  /**
+   * Get an ITable entry.
+   *
+   * @param index The index of the entry to get
+   * @return The value of that entry
+   */
+  @Intrinsic
+  @Uninterruptible
+  public Object get(int index) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return data[index];
+  }
+
+  /**
+   * Does this ITable correspond to the given interface?
+   *
+   * @param I The interface
+   * @return True if this ITable is for the given interface
+   */
+  @Inline
+  @Uninterruptible
+  public boolean isFor(RVMType I) {
+    return get(0) == I;
+  }
+
+  /**
+   * @return The interface class for this ITable
+   */
+  @Inline
+  @Interruptible
+  public RVMClass getInterfaceClass() {
+    return (RVMClass)get(0);
+  }
+
+
+  /**
+   * Get the code array at the given index.
+   *
+   * @param index The index
+   * @return The code array
+   */
+  @Inline
+  @Interruptible
+  public CodeArray getCode(int index) {
+    if (VM.VerifyAssertions) VM._assert(index < length());
+    return (CodeArray)get(index);
+  }
+  /**
+   * Set an ITable entry.
+   *
+   * @param index The index of the entry to set
+   * @param value The value to set the entry to.
+   */
+  @Intrinsic
+  @UninterruptibleNoWarn("Interruptible code not reachable at runtime")
+  public void set(int index, Object value) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    data[index] = value;
+  }
+
+  /**
+   * Return the length of the ITable
+   */
+  @Intrinsic
+  @Uninterruptible
+  public int length() {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return data.length;
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.mm.mminterface.MemoryManagerConstants;
+import org.vmmagic.unboxed.Offset;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * Constants for the JavaHeader.
+ *
+ * @see ObjectModel
+ */
+public interface JavaHeaderConstants extends SizeConstants {
+
+  /** Number of bytes in object's TIB pointer */
+  int TIB_BYTES = BYTES_IN_ADDRESS;
+  /** Number of bytes indicating an object's status */
+  int STATUS_BYTES = BYTES_IN_ADDRESS;
+
+  int ALIGNMENT_MASK = 0x00000001;
+  int ALIGNMENT_VALUE = 0xdeadbeef;
+  int LOG_MIN_ALIGNMENT = LOG_BYTES_IN_INT;
+
+  /**
+   * Number of bytes used to store the array length. We use 64 bits
+   * for the length on a 64 bit architecture as this makes the other
+   * words 8-byte aligned, and the header has to be 8-byte aligned.
+   */
+  int ARRAY_LENGTH_BYTES = VM.BuildFor64Addr ? BYTES_IN_ADDRESS : BYTES_IN_INT;
+
+  /** Number of bytes used by the Java Header */
+  int JAVA_HEADER_BYTES = TIB_BYTES + STATUS_BYTES;
+  /** Number of bytes used by the GC Header */
+  int GC_HEADER_BYTES = MemoryManagerConstants.GC_HEADER_BYTES;
+  /** Number of bytes used by the miscellaneous header */
+  int MISC_HEADER_BYTES = MiscHeaderConstants.NUM_BYTES_HEADER;
+  /** Size of GC and miscellaneous headers */
+  int OTHER_HEADER_BYTES = GC_HEADER_BYTES + MISC_HEADER_BYTES;
+
+  /** Offset of array length from object reference */
+  Offset ARRAY_LENGTH_OFFSET = Offset.fromIntSignExtend(-ARRAY_LENGTH_BYTES);
+  /** Offset of the first field from object reference */
+  Offset FIELD_ZERO_OFFSET = ARRAY_LENGTH_OFFSET;
+  /** Offset of the Java header from the object reference */
+  Offset JAVA_HEADER_OFFSET = ARRAY_LENGTH_OFFSET.minus(JAVA_HEADER_BYTES);
+  /** Offset of the miscellaneous header from the object reference */
+  Offset MISC_HEADER_OFFSET = JAVA_HEADER_OFFSET.minus(MISC_HEADER_BYTES);
+  /** Offset of the garbage collection header from the object reference */
+  Offset GC_HEADER_OFFSET = MISC_HEADER_OFFSET.minus(GC_HEADER_BYTES);
+  /** Offset of first element of an array */
+  Offset ARRAY_BASE_OFFSET = Offset.zero();
+
+  /**
+   * This object model supports two schemes for hashcodes:
+   * (1) a 10 bit hash code in the object header
+   * (2) use the address of the object as its hashcode.
+   *     In a copying collector, this forces us to add a word
+   *     to copied objects that have had their hashcode taken.
+   */
+  boolean ADDRESS_BASED_HASHING = !MemoryManagerConstants.GENERATE_GC_TRACE;
+
+  /** How many bits in the header are available for the GC and MISC headers? */
+  int NUM_AVAILABLE_BITS = ADDRESS_BASED_HASHING ? 8 : 2;
+
+  /**
+   * Does this object model use the same header word to contain
+   * the TIB and a forwarding pointer?
+   */
+  boolean FORWARDING_PTR_OVERLAYS_TIB = false;
+
+  /**
+   * Does this object model place the hash for a hashed and moved object
+   * after the data (at a dynamic offset)
+   */
+  boolean DYNAMIC_HASH_OFFSET = ADDRESS_BASED_HASHING && MemoryManagerConstants.NEEDS_LINEAR_SCAN;
+
+  /**
+   * Can we perform a linear scan?
+   */
+  boolean ALLOWS_LINEAR_SCAN = true;
+
+  /**
+   * Do we need to segregate arrays and scalars to do a linear scan?
+   */
+  boolean SEGREGATE_ARRAYS_FOR_LINEAR_SCAN = false;
+
+  /*
+   * Stuff for address based hashing
+   */ Word HASH_STATE_UNHASHED = Word.zero();
+  Word HASH_STATE_HASHED = Word.one().lsh(8); //0x00000100
+  Word HASH_STATE_HASHED_AND_MOVED = Word.fromIntZeroExtend(3).lsh(8); //0x0000300
+  Word HASH_STATE_MASK = HASH_STATE_UNHASHED.or(HASH_STATE_HASHED).or(HASH_STATE_HASHED_AND_MOVED);
+
+  int HASHCODE_BYTES = BYTES_IN_INT;
+  Offset HASHCODE_OFFSET = GC_HEADER_OFFSET.minus(HASHCODE_BYTES);
+
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.ArchitectureSpecific.Assembler;
+import org.jikesrvm.VM;
+import org.jikesrvm.Configuration;
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.classloader.RVMArray;
+import org.jikesrvm.classloader.RVMClass;
+import org.jikesrvm.classloader.RVMType;
+import org.jikesrvm.mm.mminterface.MemoryManagerConstants;
+import org.jikesrvm.runtime.Magic;
+import org.jikesrvm.runtime.Memory;
+import org.jikesrvm.scheduler.Lock;
+import org.jikesrvm.scheduler.ThinLock;
+import org.jikesrvm.scheduler.RVMThread;
+import org.vmmagic.pragma.Inline;
+import org.vmmagic.pragma.Interruptible;
+import org.vmmagic.pragma.NoInline;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.pragma.Unpreemptible;
+import org.vmmagic.unboxed.Address;
+import org.vmmagic.unboxed.ObjectReference;
+import org.vmmagic.unboxed.Offset;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * Defines the JavaHeader portion of the object header for the
+ * default JikesRVM object model.
+ * The default object model uses a two word header. <p>
+ *
+ * One word holds a TIB pointer. <p>
+ *
+ * The other word ("status word") contains an inline thin lock,
+ * either the hash code or hash code state, and a few unallocated
+ * bits that can be used for other purposes.
+ * If {@link JavaHeaderConstants#ADDRESS_BASED_HASHING} is false,
+ * then to implement default hashcodes, Jikes RVM uses a 10 bit hash code
+ * that is completely stored in the status word, which is laid out as
+ * shown below:
+ * <pre>
+ *      TTTT TTTT TTTT TTTT TTTT HHHH HHHH HHAA
+ * T = thin lock bits
+ * H = hash code
+ * A = available for use by GCHeader and/or MiscHeader.
+ * </pre>
+ *
+ * If {@link JavaHeaderConstants#ADDRESS_BASED_HASHING ADDRESS_BASED_HASHING} is true,
+ * then Jikes RVM uses two bits of the status word to record the hash code state in
+ * a typical three state scheme ({@link #HASH_STATE_UNHASHED}, {@link #HASH_STATE_HASHED},
+ * and {@link #HASH_STATE_HASHED_AND_MOVED}). In this case, the status word is laid
+ * out as shown below:
+ * <pre>
+ *      TTTT TTTT TTTT TTTT TTTT TTHH AAAA AAAA
+ * T = thin lock bits
+ * H = hash code state bits
+ * A = available for use by GCHeader and/or MiscHeader.
+ * </pre>
+ */
+@Uninterruptible
+public class JavaHeader implements JavaHeaderConstants {
+
+  protected static final int SCALAR_HEADER_SIZE = JAVA_HEADER_BYTES + OTHER_HEADER_BYTES;
+  protected static final int ARRAY_HEADER_SIZE = SCALAR_HEADER_SIZE + ARRAY_LENGTH_BYTES;
+
+  /** offset of object reference from the lowest memory word */
+  protected static final int OBJECT_REF_OFFSET = ARRAY_HEADER_SIZE;  // from start to ref
+  protected static final Offset TIB_OFFSET = JAVA_HEADER_OFFSET;
+  protected static final Offset STATUS_OFFSET = TIB_OFFSET.plus(STATUS_BYTES);
+  protected static final Offset AVAILABLE_BITS_OFFSET =
+      VM.LittleEndian ? (STATUS_OFFSET) : (STATUS_OFFSET.plus(STATUS_BYTES - 1));
+
+  /*
+   * Used for 10 bit header hash code in header (!ADDRESS_BASED_HASHING)
+   */
+  protected static final int HASH_CODE_SHIFT = 2;
+  protected static final Word HASH_CODE_MASK = Word.one().lsh(10).minus(Word.one()).lsh(HASH_CODE_SHIFT);
+  protected static Word hashCodeGenerator; // seed for generating hash codes with copying collectors.
+
+  /** How many bits are allocated to a thin lock? */
+  public static final int NUM_THIN_LOCK_BITS = ADDRESS_BASED_HASHING ? 22 : 20;
+  /** How many bits to shift to get the thin lock? */
+  public static final int THIN_LOCK_SHIFT = ADDRESS_BASED_HASHING ? 10 : 12;
+  /** How many bytes do we have to offset to get to the high locking bits */
+  public static final int THIN_LOCK_DEDICATED_U16_OFFSET = VM.LittleEndian ? 2 : (VM.BuildFor64Addr ? 4 : 0);
+  /** How many bits do we have to shift to only hold the high locking bits */
+  public static final int THIN_LOCK_DEDICATED_U16_SHIFT  = 16;
+
+  /** The alignment value **/
+  public static final int ALIGNMENT_VALUE = JavaHeaderConstants.ALIGNMENT_VALUE;
+  public static final int LOG_MIN_ALIGNMENT = JavaHeaderConstants.LOG_MIN_ALIGNMENT;
+
+  static {
+    if (VM.VerifyAssertions) {
+      VM._assert(MiscHeader.REQUESTED_BITS + MemoryManagerConstants.GC_HEADER_BITS <= NUM_AVAILABLE_BITS);
+      VM._assert((THIN_LOCK_SHIFT + NUM_THIN_LOCK_BITS - THIN_LOCK_DEDICATED_U16_SHIFT) == 16);
+    }
+  }
+
+  /**
+   * Return the TIB offset.
+   */
+  public static Offset getTibOffset() {
+    return TIB_OFFSET;
+  }
+
+  /**
+   * What is the offset of the first word after the class?
+   * For use by ObjectModel.layoutInstanceFields
+   */
+  public static Offset objectEndOffset(RVMClass klass) {
+    return Offset.fromIntSignExtend(klass.getInstanceSizeInternal() - OBJECT_REF_OFFSET);
+  }
+
+  /**
+   * What is the first word after the class?
+   */
+  public static Address getObjectEndAddress(Object obj, RVMClass type) {
+    int size = type.getInstanceSize();
+    if (ADDRESS_BASED_HASHING && DYNAMIC_HASH_OFFSET) {
+      Word hashState = Magic.objectAsAddress(obj).loadWord(STATUS_OFFSET).and(HASH_STATE_MASK);
+      if (hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+        size += HASHCODE_BYTES;
+      }
+    }
+    return Magic.objectAsAddress(obj).plus(Memory.alignUp(size, SizeConstants.BYTES_IN_INT) -
+                                              OBJECT_REF_OFFSET);
+  }
+
+  /**
+   * What is the first word after the array?
+   */
+  public static Address getObjectEndAddress(Object obj, RVMArray type, int numElements) {
+    int size = type.getInstanceSize(numElements);
+    if (ADDRESS_BASED_HASHING && DYNAMIC_HASH_OFFSET) {
+      Word hashState = Magic.getWordAtOffset(obj, STATUS_OFFSET).and(HASH_STATE_MASK);
+      if (hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+        size += HASHCODE_BYTES;
+      }
+    }
+    return Magic.objectAsAddress(obj).plus(Memory.alignUp(size, SizeConstants.BYTES_IN_INT) -
+                                              OBJECT_REF_OFFSET);
+  }
+
+  /**
+   * What is the offset of the first word of the class?
+   */
+  public static int objectStartOffset(RVMClass klass) {
+    return -OBJECT_REF_OFFSET;
+  }
+
+  /**
+   * What is the last word of the header from an out-to-in perspective?
+   */
+  public static int getHeaderEndOffset() {
+    return SCALAR_HEADER_SIZE - OBJECT_REF_OFFSET;
+  }
+
+  /**
+   * How small is the minimum object header size?
+   * Can be used to pick chunk sizes for allocators.
+   */
+  public static int minimumObjectSize() {
+    return SCALAR_HEADER_SIZE;
+  }
+
+  /**
+   * Given a reference, return an address which is guaranteed to be inside
+   * the memory region allocated to the object.
+   */
+  public static Address getPointerInMemoryRegion(ObjectReference ref) {
+    return ref.toAddress().plus(TIB_OFFSET);
+  }
+
+  /**
+   * Get the TIB for an object.
+   */
+  public static TIB getTIB(Object o) {
+    return Magic.getTIBAtOffset(o, TIB_OFFSET);
+  }
+
+  /**
+   * Set the TIB for an object.
+   */
+  public static void setTIB(Object ref, TIB tib) {
+    Magic.setObjectAtOffset(ref, TIB_OFFSET, tib);
+  }
+
+  /**
+   * Set the TIB for an object.
+   */
+  @Interruptible
+  public static void setTIB(BootImageInterface bootImage, Address refOffset, Address tibAddr, RVMType type) {
+    bootImage.setAddressWord(refOffset.plus(TIB_OFFSET), tibAddr.toWord(), false, false);
+  }
+
+  /**
+   * how many bytes are needed when the scalar object is copied by GC?
+   */
+  public static int bytesRequiredWhenCopied(Object fromObj, RVMClass type) {
+    int size = type.getInstanceSize();
+    if (ADDRESS_BASED_HASHING) {
+      Word hashState = Magic.getWordAtOffset(fromObj, STATUS_OFFSET).and(HASH_STATE_MASK);
+      if (hashState.NE(HASH_STATE_UNHASHED)) {
+        size += HASHCODE_BYTES;
+      }
+    }
+    return size;
+  }
+
+  /**
+   * how many bytes are used by the scalar object?
+   */
+  public static int bytesUsed(Object obj, RVMClass type) {
+    int size = type.getInstanceSize();
+    if (MemoryManagerConstants.MOVES_OBJECTS) {
+      if (ADDRESS_BASED_HASHING) {
+        Word hashState = Magic.getWordAtOffset(obj, STATUS_OFFSET).and(HASH_STATE_MASK);
+        if (hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+          size += HASHCODE_BYTES;
+        }
+      }
+    }
+    return size;
+  }
+
+  /**
+   * how many bytes are needed when the array object is copied by GC?
+   */
+  public static int bytesRequiredWhenCopied(Object fromObj, RVMArray type, int numElements) {
+    int size = type.getInstanceSize(numElements);
+    if (ADDRESS_BASED_HASHING) {
+      Word hashState = Magic.getWordAtOffset(fromObj, STATUS_OFFSET).and(HASH_STATE_MASK);
+      if (hashState.NE(HASH_STATE_UNHASHED)) {
+        size += HASHCODE_BYTES;
+      }
+    }
+    return Memory.alignUp(size, SizeConstants.BYTES_IN_INT);
+  }
+
+  /**
+   * how many bytes are used by the array object?
+   */
+  public static int bytesUsed(Object obj, RVMArray type, int numElements) {
+    int size = type.getInstanceSize(numElements);
+    if (MemoryManagerConstants.MOVES_OBJECTS) {
+      if (ADDRESS_BASED_HASHING) {
+        Word hashState = Magic.getWordAtOffset(obj, STATUS_OFFSET).and(HASH_STATE_MASK);
+        if (hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+          size += HASHCODE_BYTES;
+        }
+      }
+    }
+    return Memory.alignUp(size, SizeConstants.BYTES_IN_INT);
+  }
+
+  /**
+   * Map from the object ref to the lowest address of the storage
+   * associated with the object
+   */
+  @Inline
+  public static Address objectStartRef(ObjectReference obj) {
+    if (MemoryManagerConstants.MOVES_OBJECTS) {
+      if (ADDRESS_BASED_HASHING && !DYNAMIC_HASH_OFFSET) {
+        Word hashState = obj.toAddress().loadWord(STATUS_OFFSET).and(HASH_STATE_MASK);
+        if (hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+          return obj.toAddress().minus(OBJECT_REF_OFFSET + HASHCODE_BYTES);
+        }
+      }
+    }
+    return obj.toAddress().minus(OBJECT_REF_OFFSET);
+  }
+
+  /**
+   * Get an object reference from the address the lowest word of the
+   * object was allocated.  In general this required that we are using
+   * a dynamic hash offset or not using address based
+   * hashing. However, the GC algorithm could safely do this in the
+   * nursery so we can't assert DYNAMIC_HASH_OFFSET.
+   */
+  public static ObjectReference getObjectFromStartAddress(Address start) {
+    if ((start.loadWord().toInt() & ALIGNMENT_MASK) == ALIGNMENT_MASK) {
+      start = start.plus(SizeConstants.BYTES_IN_WORD);
+      if ((start.loadWord().toInt() & ALIGNMENT_MASK) == ALIGNMENT_MASK) {
+        start = start.plus(SizeConstants.BYTES_IN_WORD);
+        if ((start.loadWord().toInt() & ALIGNMENT_MASK) == ALIGNMENT_MASK) {
+          start = start.plus(SizeConstants.BYTES_IN_WORD);
+          if ((start.loadWord().toInt() & ALIGNMENT_MASK) == ALIGNMENT_MASK) {
+            start = start.plus(SizeConstants.BYTES_IN_WORD);
+            if ((start.loadWord().toInt() & ALIGNMENT_MASK) == ALIGNMENT_MASK) {
+              return ObjectReference.nullReference();
+            }
+          }
+        }
+      }
+    }
+
+    return start.plus(OBJECT_REF_OFFSET).toObjectReference();
+  }
+
+  /**
+   * Get an object reference from the address the lowest word of the
+   * object was allocated.
+   */
+  public static ObjectReference getScalarFromStartAddress(Address start) {
+    return getObjectFromStartAddress(start);
+  }
+
+  /**
+   * Get an object reference from the address the lowest word of the
+   * object was allocated.
+   */
+  public static ObjectReference getArrayFromStartAddress(Address start) {
+    return getObjectFromStartAddress(start);
+  }
+
+  /**
+   * Get the next object in the heap under contiguous
+   * allocation. Handles alignment issues only when there are no GC or
+   * Misc header words. In the case there are we probably have to ask
+   * MemoryManager to distinguish this for us.
+   */
+  protected static ObjectReference getNextObject(ObjectReference obj, int size) {
+    if (VM.VerifyAssertions) VM._assert(OTHER_HEADER_BYTES == 0);
+
+    return getObjectFromStartAddress(obj.toAddress().plus(size).minus(OBJECT_REF_OFFSET));
+  }
+
+  /**
+   * Get the next scalar in the heap under contiguous
+   * allocation. Handles alignment issues
+   */
+  public static ObjectReference getNextObject(ObjectReference obj, RVMClass type) {
+    return getObjectFromStartAddress(getObjectEndAddress(obj.toObject(), type));
+  }
+
+  /**
+   * Get the next array in the heap under contiguous
+   * allocation. Handles alignment issues
+   */
+  public static ObjectReference getNextObject(ObjectReference obj, RVMArray type, int numElements) {
+    return getObjectFromStartAddress(getObjectEndAddress(obj.toObject(), type, numElements));
+  }
+
+  /**
+   * Get the reference of an array when copied to the specified region.
+   */
+  @Inline
+  public static Object getReferenceWhenCopiedTo(Object obj, Address to, RVMArray type) {
+    return getReferenceWhenCopiedTo(obj, to);
+  }
+
+  /**
+   * Get the reference of a scalar when copied to the specified region.
+   */
+  @Inline
+  public static Object getReferenceWhenCopiedTo(Object obj, Address to, RVMClass type) {
+    return getReferenceWhenCopiedTo(obj, to);
+  }
+
+  @Inline
+  protected static Object getReferenceWhenCopiedTo(Object obj, Address to) {
+    if (ADDRESS_BASED_HASHING && !DYNAMIC_HASH_OFFSET) {
+      // Read the hash state (used below)
+      Word statusWord = Magic.getWordAtOffset(obj, STATUS_OFFSET);
+      Word hashState = statusWord.and(HASH_STATE_MASK);
+      if (hashState.NE(HASH_STATE_UNHASHED)) {
+        to = to.plus(HASHCODE_BYTES);
+      }
+    }
+    return Magic.addressAsObject(to.plus(OBJECT_REF_OFFSET));
+  }
+
+  /**
+   * Copy a scalar to the given raw storage address
+   */
+  @Inline
+  public static Object moveObject(Address toAddress, Object fromObj, int numBytes, RVMClass type) {
+
+    // We copy arrays and scalars the same way
+    return moveObject(toAddress, fromObj, null, numBytes);
+  }
+
+  /**
+   * Copy an array to the given location.
+   */
+  @Inline
+  public static Object moveObject(Object fromObj, Object toObj, int numBytes, RVMClass type) {
+
+    // We copy arrays and scalars the same way
+    return moveObject(Address.zero(), fromObj, toObj, numBytes);
+  }
+
+  /**
+   * Copy an array to the given raw storage address
+   */
+  @Inline
+  public static Object moveObject(Address toAddress, Object fromObj, int numBytes, RVMArray type) {
+
+    // We copy arrays and scalars the same way
+    return moveObject(toAddress, fromObj, null, numBytes);
+  }
+
+  /**
+   * Copy an array to the given location.
+   */
+  @Inline
+  public static Object moveObject(Object fromObj, Object toObj, int numBytes, RVMArray type) {
+
+    // We copy arrays and scalars the same way
+    return moveObject(Address.zero(), fromObj, toObj, numBytes);
+  }
+
+  /**
+   * Copy an object to the given raw storage address
+   */
+  @Inline
+  public static Object moveObject(Address toAddress, Object fromObj, Object toObj, int numBytes) {
+    if (VM.VerifyAssertions) VM._assert(toAddress.isZero() || toObj == null);
+
+    // Default values
+    int copyBytes = numBytes;
+    int objRefOffset = OBJECT_REF_OFFSET;
+    Word statusWord = Word.zero();
+    Word hashState = HASH_STATE_UNHASHED;
+
+    if (ADDRESS_BASED_HASHING) {
+      // Read the hash state (used below)
+      statusWord = Magic.getWordAtOffset(fromObj, STATUS_OFFSET);
+      hashState = statusWord.and(HASH_STATE_MASK);
+      if (hashState.EQ(HASH_STATE_HASHED)) {
+        // We do not copy the hashcode, but we do allocate it
+        copyBytes -= HASHCODE_BYTES;
+
+        if (!DYNAMIC_HASH_OFFSET) {
+          // The hashcode is the first word, so we copy to object one word higher
+          if (toObj == null) {
+            toAddress = toAddress.plus(HASHCODE_BYTES);
+          }
+        }
+      } else if (!DYNAMIC_HASH_OFFSET && hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+        // Simple operation (no hash state change), but one word larger header
+        objRefOffset += HASHCODE_BYTES;
+      }
+    }
+
+    if (toObj != null) {
+      toAddress = Magic.objectAsAddress(toObj).minus(objRefOffset);
+    }
+
+    // Low memory word of source object
+    Address fromAddress = Magic.objectAsAddress(fromObj).minus(objRefOffset);
+
+    // Do the copy
+    Memory.aligned32Copy(toAddress, fromAddress, copyBytes);
+
+    if (toObj == null) {
+      toObj = Magic.addressAsObject(toAddress.plus(objRefOffset));
+    } else {
+      if (VM.VerifyAssertions) VM._assert(toObj == Magic.addressAsObject(toAddress.plus(objRefOffset)));
+    }
+
+    // Do we need to copy the hash code?
+    if (hashState.EQ(HASH_STATE_HASHED)) {
+      int hashCode = Magic.objectAsAddress(fromObj).toWord().rshl(SizeConstants.LOG_BYTES_IN_ADDRESS).toInt();
+      if (DYNAMIC_HASH_OFFSET) {
+        Magic.setIntAtOffset(toObj, Offset.fromIntSignExtend(numBytes - OBJECT_REF_OFFSET - HASHCODE_BYTES), hashCode);
+      } else {
+        Magic.setIntAtOffset(toObj, HASHCODE_OFFSET, (hashCode << 1) | ALIGNMENT_MASK);
+      }
+      Magic.setWordAtOffset(toObj, STATUS_OFFSET, statusWord.or(HASH_STATE_HASHED_AND_MOVED));
+      if (ObjectModel.HASH_STATS) ObjectModel.hashTransition2++;
+    }
+
+    return toObj;
+  }
+
+  /**
+   * Get the hash code of an object.
+   */
+  @Inline
+  @Interruptible
+  public static int getObjectHashCode(Object o) {
+    if (ADDRESS_BASED_HASHING) {
+      if (MemoryManagerConstants.MOVES_OBJECTS) {
+        Word hashState = Magic.getWordAtOffset(o, STATUS_OFFSET).and(HASH_STATE_MASK);
+        if (hashState.EQ(HASH_STATE_HASHED)) {
+          // HASHED, NOT MOVED
+          return Magic.objectAsAddress(o).toWord().rshl(SizeConstants.LOG_BYTES_IN_ADDRESS).toInt();
+        } else if (hashState.EQ(HASH_STATE_HASHED_AND_MOVED)) {
+          // HASHED AND MOVED
+          if (DYNAMIC_HASH_OFFSET) {
+            // Read the size of this object.
+            RVMType t = Magic.getObjectType(o);
+            int offset =
+                t.isArrayType() ? t.asArray().getInstanceSize(Magic.getArrayLength(o)) -
+                                  OBJECT_REF_OFFSET : t.asClass().getInstanceSize() - OBJECT_REF_OFFSET;
+            return Magic.getIntAtOffset(o, Offset.fromIntSignExtend(offset));
+          } else {
+            return (Magic.getIntAtOffset(o, HASHCODE_OFFSET) >>> 1);
+          }
+        } else {
+          // UNHASHED
+          Word tmp;
+          do {
+            tmp = Magic.prepareWord(o, STATUS_OFFSET);
+          } while (!Magic.attemptWord(o, STATUS_OFFSET, tmp, tmp.or(HASH_STATE_HASHED)));
+          if (ObjectModel.HASH_STATS) ObjectModel.hashTransition1++;
+          return getObjectHashCode(o);
+        }
+      } else {
+        return Magic.objectAsAddress(o).toWord().rshl(SizeConstants.LOG_BYTES_IN_ADDRESS).toInt();
+      }
+    } else { // 10 bit hash code in status word
+      int hashCode = Magic.getWordAtOffset(o, STATUS_OFFSET).and(HASH_CODE_MASK).rshl(HASH_CODE_SHIFT).toInt();
+      if (hashCode != 0) {
+        return hashCode;
+      }
+      return installHashCode(o);
+    }
+  }
+
+  /** Install a new hashcode (only used if !ADDRESS_BASED_HASHING) */
+  @NoInline
+  @Interruptible
+  protected static int installHashCode(Object o) {
+    Word hashCode;
+    do {
+      hashCodeGenerator = hashCodeGenerator.plus(Word.one().lsh(HASH_CODE_SHIFT));
+      hashCode = hashCodeGenerator.and(HASH_CODE_MASK);
+    } while (hashCode.isZero());
+    while (true) {
+      Word statusWord = Magic.prepareWord(o, STATUS_OFFSET);
+      if (!(statusWord.and(HASH_CODE_MASK).isZero())) {
+        // some other thread installed a hashcode
+        return statusWord.and(HASH_CODE_MASK).rshl(HASH_CODE_SHIFT).toInt();
+      }
+      if (Magic.attemptWord(o, STATUS_OFFSET, statusWord, statusWord.or(hashCode))) {
+        // we installed the hash code
+        return hashCode.rshl(HASH_CODE_SHIFT).toInt();
+      }
+    }
+  }
+
+  /**
+   * Get the offset of the thin lock word in this object
+   */
+  public static Offset getThinLockOffset(Object o) {
+    return STATUS_OFFSET;
+  }
+
+  /**
+   * what is the default offset for a thin lock?
+   */
+  public static Offset defaultThinLockOffset() {
+    return STATUS_OFFSET;
+  }
+
+  /**
+   * Allocate a thin lock word for instances of the type
+   * (if they already have one, then has no effect).
+   */
+  public static void allocateThinLock(RVMType t) {
+    // nothing to do (all objects have thin locks in this object model);
+  }
+
+  /**
+   * Generic lock
+   */
+  @Unpreemptible("Become another thread when lock is contended, don't preempt in other cases")
+  public static void genericLock(Object o) {
+    ThinLock.lock(o, STATUS_OFFSET);
+  }
+
+  /**
+   * Generic unlock
+   */
+  @Unpreemptible("No interruption unless of exceptions")
+  public static void genericUnlock(Object o) {
+    ThinLock.unlock(o, STATUS_OFFSET);
+  }
+
+  /**
+   * @param obj an object
+   * @param thread a thread
+   * @return <code>true</code> if the lock on obj is currently owned
+   *         by thread <code>false</code> if it is not.
+   */
+  public static boolean holdsLock(Object obj, RVMThread thread) {
+    return ThinLock.holdsLock(obj, STATUS_OFFSET, thread);
+  }
+
+  /**
+   * Obtains the heavy-weight lock, if there is one, associated with the
+   * indicated object.  Returns <code>null</code>, if there is no
+   * heavy-weight lock associated with the object.
+   *
+   * @param o the object from which a lock is desired
+   * @param create if true, create heavy lock if none found
+   * @return the heavy-weight lock on the object (if any)
+   */
+  @Unpreemptible("May be interrupted for allocations of locks")
+  public static Lock getHeavyLock(Object o, boolean create) {
+    return ThinLock.getHeavyLock(o, STATUS_OFFSET, create);
+  }
+
+  /**
+   * Non-atomic read of word containing available bits
+   */
+  public static Word readAvailableBitsWord(Object o) {
+    return Magic.getWordAtOffset(o, STATUS_OFFSET);
+  }
+
+  /**
+   * Non-atomic read of byte containing available bits
+   */
+  public static byte readAvailableByte(Object o) {
+    return Magic.getByteAtOffset(o, AVAILABLE_BITS_OFFSET);
+  }
+
+  /**
+   * Non-atomic write of word containing available bits
+   */
+  public static void writeAvailableBitsWord(Object o, Word val) {
+    Magic.setWordAtOffset(o, STATUS_OFFSET, val);
+  }
+
+  /**
+   * Non-atomic write of word containing available bits
+   */
+  @Interruptible
+  public static void writeAvailableByte(BootImageInterface bootImage, Address ref, byte val) {
+    bootImage.setByte(ref.plus(AVAILABLE_BITS_OFFSET), val);
+  }
+
+  /**
+   * Non-atomic write of byte containing available bits
+   */
+  public static void writeAvailableByte(Object o, byte val) {
+    Magic.setByteAtOffset(o, AVAILABLE_BITS_OFFSET, val);
+  }
+
+  /**
+   * Return true if argument bit is 1, false if it is 0
+   */
+  public static boolean testAvailableBit(Object o, int idx) {
+    Word mask = Word.fromIntSignExtend(1 << idx);
+    Word status = Magic.getWordAtOffset(o, STATUS_OFFSET);
+    return mask.and(status).NE(Word.zero());
+  }
+
+  /**
+   * Set argument bit to 1 if value is true, 0 if value is false
+   */
+  public static void setAvailableBit(Object o, int idx, boolean flag) {
+    Word status = Magic.getWordAtOffset(o, STATUS_OFFSET);
+    if (flag) {
+      Word mask = Word.fromIntSignExtend(1 << idx);
+      Magic.setWordAtOffset(o, STATUS_OFFSET, status.or(mask));
+    } else {
+      Word mask = Word.fromIntSignExtend(1 << idx).not();
+      Magic.setWordAtOffset(o, STATUS_OFFSET, status.and(mask));
+    }
+  }
+
+  /**
+   * Freeze the other bits in the byte containing the available bits
+   * so that it is safe to update them using setAvailableBits.
+   */
+  @Interruptible
+  public static void initializeAvailableByte(Object o) {
+    if (!ADDRESS_BASED_HASHING) getObjectHashCode(o);
+  }
+
+  /**
+   * A prepare on the word containing the available bits
+   */
+  public static Word prepareAvailableBits(Object o) {
+    return Magic.prepareWord(o, STATUS_OFFSET);
+  }
+
+  /**
+   * An attempt on the word containing the available bits
+   */
+  public static boolean attemptAvailableBits(Object o, Word oldVal, Word newVal) {
+    return Magic.attemptWord(o, STATUS_OFFSET, oldVal, newVal);
+  }
+
+  /**
+   * Given the smallest base address in a region, return the smallest
+   * object reference that could refer to an object in the region.
+   */
+  public static Address minimumObjectRef(Address regionBaseAddr) {
+    return regionBaseAddr.plus(OBJECT_REF_OFFSET);
+  }
+
+  /**
+   * Given the largest base address in a region, return the largest
+   * object reference that could refer to an object in the region.
+   */
+  public static Address maximumObjectRef(Address regionHighAddr) {
+    return regionHighAddr.plus(OBJECT_REF_OFFSET - SCALAR_HEADER_SIZE);
+  }
+
+  /**
+   * Compute the header size of an instance of the given type.
+   */
+  public static int computeScalarHeaderSize(RVMClass type) {
+    return SCALAR_HEADER_SIZE;
+  }
+
+  /**
+   * Compute the header size of an instance of the given type.
+   */
+  public static int computeArrayHeaderSize(RVMArray type) {
+    return ARRAY_HEADER_SIZE;
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMClass.
+   * @param t RVMClass instance being created
+   */
+  public static int getAlignment(RVMClass t) {
+    return t.getAlignment();
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMClass.
+   * @param t RVMClass instance being copied
+   * @param obj the object being copied
+   */
+  public static int getAlignment(RVMClass t, Object obj) {
+    return t.getAlignment();
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMArray.
+   * @param t RVMArray instance being created
+   */
+  public static int getAlignment(RVMArray t) {
+    return t.getAlignment();
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMArray.
+   * @param t RVMArray instance being copied
+   * @param obj the object being copied
+   */
+  public static int getAlignment(RVMArray t, Object obj) {
+    return t.getAlignment();
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object
+   * that must be aligned.
+   * @param t RVMClass instance being created
+   */
+  public static int getOffsetForAlignment(RVMClass t, boolean needsIdentityHash) {
+    /* Align the first field - note that this is one word off from
+       the reference. */
+    if (ADDRESS_BASED_HASHING && !DYNAMIC_HASH_OFFSET && needsIdentityHash) {
+      return SCALAR_HEADER_SIZE + HASHCODE_BYTES;
+    }
+    return SCALAR_HEADER_SIZE;
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object
+   * that must be aligned.
+   * @param t RVMClass instance being copied
+   * @param obj the object being copied
+   */
+  public static int getOffsetForAlignment(RVMClass t, ObjectReference obj) {
+    if (ADDRESS_BASED_HASHING && !DYNAMIC_HASH_OFFSET) {
+      Word hashState = obj.toAddress().loadWord(STATUS_OFFSET).and(HASH_STATE_MASK);
+      if (hashState.NE(HASH_STATE_UNHASHED)) {
+        return SCALAR_HEADER_SIZE + HASHCODE_BYTES;
+      }
+    }
+    return SCALAR_HEADER_SIZE;
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object that must
+   * be aligned.
+   * @param t RVMArray instance being created
+   */
+  public static int getOffsetForAlignment(RVMArray t, boolean needsIdentityHash) {
+    /* although array_header_size == object_ref_offset we say this
+       because the whole point is to align the object ref */
+    if (ADDRESS_BASED_HASHING && !DYNAMIC_HASH_OFFSET && needsIdentityHash) {
+        return OBJECT_REF_OFFSET + HASHCODE_BYTES;
+    }
+    return OBJECT_REF_OFFSET;
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object that must
+   * be aligned.
+   * @param t RVMArray instance being copied
+   * @param obj the object being copied
+   */
+  public static int getOffsetForAlignment(RVMArray t, ObjectReference obj) {
+    /* although array_header_size == object_ref_offset we say this
+       because the whole point is to align the object ref */
+    if (ADDRESS_BASED_HASHING && !DYNAMIC_HASH_OFFSET) {
+      Word hashState = obj.toAddress().loadWord(STATUS_OFFSET).and(HASH_STATE_MASK);
+      if (hashState.NE(HASH_STATE_UNHASHED)) {
+        return OBJECT_REF_OFFSET + HASHCODE_BYTES;
+      }
+    }
+    return OBJECT_REF_OFFSET;
+  }
+
+  /**
+   * Perform any required initialization of the JAVA portion of the header.
+   * @param ptr the raw storage to be initialized
+   * @param tib the TIB of the instance being created
+   * @param size the number of bytes allocated by the GC system for this object.
+   */
+  public static Object initializeScalarHeader(Address ptr, TIB tib, int size) {
+    // (TIB set by ObjectModel)
+    Object ref = Magic.addressAsObject(ptr.plus(OBJECT_REF_OFFSET));
+    return ref;
+  }
+
+  /**
+   * Perform any required initialization of the JAVA portion of the header.
+   * @param bootImage The bootimage being written
+   * @param ptr  The object ref to the storage to be initialized
+   * @param tib  The TIB of the instance being created
+   * @param size The number of bytes allocated by the GC system for this object.
+   * @param needsIdentityHash needs an identity hash value
+   * @param identityHashValue the value for the identity hash
+   * @return the address used for a reference to this object
+   */
+  @Interruptible
+  public static Address initializeScalarHeader(BootImageInterface bootImage, Address ptr, TIB tib, int size, boolean needsIdentityHash, int identityHashValue) {
+    Address ref = ptr.plus(OBJECT_REF_OFFSET);
+    if (needsIdentityHash) {
+      bootImage.setFullWord(ref.plus(STATUS_OFFSET), HASH_STATE_HASHED_AND_MOVED.toInt());
+      if (DYNAMIC_HASH_OFFSET) {
+        // Read the size of this object.
+        RVMType t = tib.getType();
+        bootImage.setFullWord(ptr.plus(t.asClass().getInstanceSize()), identityHashValue);
+      } else {
+        ref = ref.plus(HASHCODE_BYTES);
+        bootImage.setFullWord(ref.plus(HASHCODE_OFFSET), (identityHashValue << 1) | ALIGNMENT_MASK);
+      }
+    } else {
+      // As boot image objects can't move there is no benefit in lazily setting them to hashed
+      bootImage.setFullWord(ref.plus(STATUS_OFFSET), HASH_STATE_HASHED.toInt());
+    }
+    return ref;
+  }
+
+  /**
+   * Perform any required initialization of the JAVA portion of the header.
+   * @param ptr the raw storage to be initialized
+   * @param tib the TIB of the instance being created
+   * @param size the number of bytes allocated by the GC system for this object.
+   */
+  public static Object initializeArrayHeader(Address ptr, TIB tib, int size) {
+    Object ref = Magic.addressAsObject(ptr.plus(OBJECT_REF_OFFSET));
+    // (TIB and array length set by ObjectModel)
+    return ref;
+  }
+
+  /**
+   * Perform any required initialization of the JAVA portion of the header.
+   *
+   * @param bootImage the bootimage being written
+   * @param ptr  the object ref to the storage to be initialized
+   * @param tib the TIB of the instance being created
+   * @param size the number of bytes allocated by the GC system for this object.
+   * @param numElements the number of elements in the array
+   * @return the address used for a reference to this object
+   */
+  @Interruptible
+  public static Address initializeArrayHeader(BootImageInterface bootImage, Address ptr, TIB tib, int size, int numElements, boolean needsIdentityHash, int identityHashValue) {
+    Address ref = ptr.plus(OBJECT_REF_OFFSET);
+    // (TIB set by BootImageWriter; array length set by ObjectModel)
+    if (needsIdentityHash) {
+      bootImage.setFullWord(ref.plus(STATUS_OFFSET), HASH_STATE_HASHED_AND_MOVED.toInt());
+      if (DYNAMIC_HASH_OFFSET) {
+        // Read the size of this object.
+        RVMType t = tib.getType();
+        bootImage.setFullWord(ptr.plus(t.asArray().getInstanceSize(numElements)), identityHashValue);
+      } else {
+        ref = ref.plus(HASHCODE_BYTES);
+        bootImage.setFullWord(ref.plus(HASHCODE_OFFSET), (identityHashValue << 1) | ALIGNMENT_MASK);
+      }
+    } else {
+      // As boot image objects can't move there is no benefit in lazily setting them to hashed
+      bootImage.setFullWord(ref.plus(STATUS_OFFSET), HASH_STATE_HASHED.toInt());
+    }
+    return ref;
+  }
+
+  /**
+   * For low level debugging of GC subsystem.
+   * Dump the header word(s) of the given object reference.
+   * @param ref the object reference whose header should be dumped
+   */
+  public static void dumpHeader(Object ref) {
+    // TIB dumped in ObjectModel
+    VM.sysWrite(" STATUS=");
+    VM.sysWriteHex(Magic.getWordAtOffset(ref, STATUS_OFFSET).toAddress());
+  }
+
+  /**
+   * The following method will emit code that moves a reference to an
+   * object's TIB into a destination register.
+   *
+   * @param asm the assembler object to emit code with
+   * @param dest the number of the destination register
+   * @param object the number of the register holding the object reference
+   */
+  @Interruptible
+  public static void baselineEmitLoadTIB(Assembler asm, int dest, int object) {
+    Configuration.archHelper.baselineEmitLoadTIB(asm, dest, object, TIB_OFFSET);
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.Constants;
+import org.jikesrvm.mm.mminterface.MemoryManagerConstants;
+
+/**
+ * Defines other header words not used for
+ * core Java language support of memory allocation.
+ * Typically these are extra header words used for various
+ * kinds of instrumentation or profiling.
+ *
+ * @see ObjectModel
+ */
+public interface MiscHeaderConstants extends Constants {
+
+  /*********************
+   * Support for GC Tracing; uses either 0 or 3 words of MISC HEADER
+   */
+
+  /* amount by which tracing causes headers to grow */ int GC_TRACING_HEADER_WORDS =
+      (MemoryManagerConstants.GENERATE_GC_TRACE ? 3 : 0);
+  int GC_TRACING_HEADER_BYTES = GC_TRACING_HEADER_WORDS << LOG_BYTES_IN_ADDRESS;
+
+  /**
+   * How many bytes are used by all misc header fields?
+   */
+  int NUM_BYTES_HEADER = GC_TRACING_HEADER_BYTES; // + YYY_HEADER_BYTES;
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.Constants;
+import org.jikesrvm.mm.mminterface.MemoryManagerConstants;
+import org.jikesrvm.runtime.Magic;
+import org.vmmagic.pragma.Entrypoint;
+import org.vmmagic.pragma.Interruptible;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.unboxed.Address;
+import org.vmmagic.unboxed.ObjectReference;
+import org.vmmagic.unboxed.Offset;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * Defines other header words not used for
+ * core Java language support of memory allocation.
+ * Typically these are extra header words used for various
+ * kinds of instrumentation or profiling.
+ *
+ * @see ObjectModel
+ */
+@Uninterruptible
+public final class MiscHeader implements Constants, MiscHeaderConstants {
+
+  private static final Offset MISC_HEADER_START = JavaHeaderConstants.MISC_HEADER_OFFSET;
+
+  /* offset from object ref to .oid field, in bytes */
+  static final Offset OBJECT_OID_OFFSET = MISC_HEADER_START;
+  /* offset from object ref to OBJECT_DEATH field, in bytes */
+  static final Offset OBJECT_DEATH_OFFSET = OBJECT_OID_OFFSET.plus(BYTES_IN_ADDRESS);
+  /* offset from object ref to .link field, in bytes */
+  static final Offset OBJECT_LINK_OFFSET = OBJECT_DEATH_OFFSET.plus(BYTES_IN_ADDRESS);
+
+  /////////////////////////
+  // Support for YYY (an example of how to add a word to all objects)
+  /////////////////////////
+  // offset from object ref to yet-to-be-defined instrumentation word
+  // static final int YYY_DATA_OFFSET_1 = (VM.YYY ? MISC_HEADER_START + GC_TRACING_HEADER_WORDS : 0);
+  // static final int YYY_DATA_OFFSET_2 = (VM.YYY ? MISC_HEADER_START + GC_TRACING_HEADER_WORDS + 4 : 0);
+  // static final int YYY_HEADER_BYTES = (VM.YYY ? 8 : 0);
+
+  /**
+   * How many available bits does the misc header want to use?
+   */
+  static final int REQUESTED_BITS = 0;
+
+  /**
+   * The next object ID to be used.
+   */
+  @Entrypoint
+  private static Word oid;
+  /**
+   * The current "time" for the trace being generated.
+   */
+  private static Word time;
+  /**
+   * The address of the last object allocated into the header.
+   */
+  @Entrypoint
+  private static Word prevAddress;
+
+  static {
+    oid = Word.fromIntSignExtend(4);
+    time = Word.fromIntSignExtend(4);
+    prevAddress = Word.zero();
+  }
+
+  /**
+   * Perform any required initialization of the MISC portion of the header.
+   * @param obj the object ref to the storage to be initialized
+   * @param tib the TIB of the instance being created
+   * @param size the number of bytes allocated by the GC system for this object.
+   * @param isScalar are we initializing a scalar (true) or array (false) object?
+   */
+  @Uninterruptible
+  public static void initializeHeader(Object obj, TIB tib, int size, boolean isScalar) {
+    /* Only perform initialization when it is required */
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      Address ref = Magic.objectAsAddress(obj);
+      ref.store(oid, OBJECT_OID_OFFSET);
+      ref.store(time, OBJECT_DEATH_OFFSET);
+      oid = oid.plus(Word.fromIntSignExtend((size - GC_TRACING_HEADER_BYTES) >> LOG_BYTES_IN_ADDRESS));
+    }
+  }
+
+  /**
+   * Perform any required initialization of the MISC portion of the header.
+   * @param bootImage the bootimage being written
+   * @param ref the object ref to the storage to be initialized
+   * @param tib the TIB of the instance being created
+   * @param size the number of bytes allocated by the GC system for this object.
+   * @param isScalar are we initializing a scalar (true) or array (false) object?
+   */
+  @Interruptible("Only called during boot iamge creation")
+  public static void initializeHeader(BootImageInterface bootImage, Address ref, TIB tib, int size,
+                                      boolean isScalar) {
+    /* Only perform initialization when it is required */
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      bootImage.setAddressWord(ref.plus(OBJECT_OID_OFFSET), oid, false, false);
+      bootImage.setAddressWord(ref.plus(OBJECT_DEATH_OFFSET), time, false, false);
+      bootImage.setAddressWord(ref.plus(OBJECT_LINK_OFFSET), prevAddress, false, false);
+      prevAddress = ref.toWord();
+      oid = oid.plus(Word.fromIntSignExtend((size - GC_TRACING_HEADER_BYTES) >> LOG_BYTES_IN_ADDRESS));
+    }
+  }
+
+  public static void updateDeathTime(Object object) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      Magic.objectAsAddress(object).store(time, OBJECT_DEATH_OFFSET);
+    }
+  }
+
+  public static void setDeathTime(Object object, Word time_) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      Magic.objectAsAddress(object).store(time_, OBJECT_DEATH_OFFSET);
+    }
+  }
+
+  public static void setLink(Object object, ObjectReference link) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      Magic.objectAsAddress(object).store(link, OBJECT_LINK_OFFSET);
+    }
+  }
+
+  public static void updateTime(Word time_) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    time = time_;
+  }
+
+  public static Word getOID(Object object) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      return Magic.objectAsAddress(object).plus(OBJECT_OID_OFFSET).loadWord();
+    } else {
+      return Word.zero();
+    }
+  }
+
+  public static Word getDeathTime(Object object) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      return Magic.objectAsAddress(object).plus(OBJECT_DEATH_OFFSET).loadWord();
+    } else {
+      return Word.zero();
+    }
+  }
+
+  public static ObjectReference getLink(Object ref) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      return ObjectReference.fromObject(Magic.getObjectAtOffset(ref, OBJECT_LINK_OFFSET));
+    } else {
+      return ObjectReference.nullReference();
+    }
+  }
+
+  public static Address getBootImageLink() {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      return prevAddress.toAddress();
+    } else {
+      return Address.zero();
+    }
+  }
+
+  public static Word getOID() {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      return oid;
+    } else {
+      return Word.zero();
+    }
+  }
+
+  public static void setOID(Word oid_) {
+    if (VM.VerifyAssertions) VM._assert(MemoryManagerConstants.GENERATE_GC_TRACE);
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      oid = oid_;
+    }
+  }
+
+  public static int getHeaderSize() {
+    return NUM_BYTES_HEADER;
+  }
+
+  /**
+   * For low level debugging of GC subsystem.
+   * Dump the header word(s) of the given object reference.
+   * @param ref the object reference whose header should be dumped
+   */
+  public static void dumpHeader(Object ref) {
+    // by default nothing to do, unless the misc header is required
+    if (MemoryManagerConstants.GENERATE_GC_TRACE) {
+      VM.sysWrite(" OID=", getOID(ref));
+      VM.sysWrite(" LINK=", getLink(ref));
+      VM.sysWrite(" DEATH=", getDeathTime(ref));
+    }
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.ArchitectureSpecific.Assembler;
+import org.jikesrvm.VM;
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.classloader.RVMArray;
+import org.jikesrvm.classloader.RVMClass;
+import org.jikesrvm.classloader.RVMType;
+import org.jikesrvm.mm.mminterface.MemoryManager;
+import org.jikesrvm.runtime.Magic;
+import org.jikesrvm.scheduler.Lock;
+import org.jikesrvm.scheduler.RVMThread;
+import org.vmmagic.pragma.Entrypoint;
+import org.vmmagic.pragma.Inline;
+import org.vmmagic.pragma.Interruptible;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.pragma.Unpreemptible;
+import org.vmmagic.unboxed.Address;
+import org.vmmagic.unboxed.Extent;
+import org.vmmagic.unboxed.ObjectReference;
+import org.vmmagic.unboxed.Offset;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * The interface to the object model definition accessible to the
+ * virtual machine. <p>
+ *
+ * Conceptually each Java object is composed of the following pieces:
+ * <ul>
+ * <li> The JavaHeader defined by {@link JavaHeader}. This portion of the
+ *      object supports language-level functions such as locking, hashcodes,
+ *      dynamic type checking, virtual function invocation, and array length.
+ * <li> The GCHeader defined by {@link MemoryManager}. This portion
+ *      of the object supports allocator-specific requirements such as
+ *      mark/barrier bits, reference counts, etc.
+ * <li> The MiscHeader defined by {@link MiscHeader}. This portion supports
+ *      various other clients that want to add bits/words to all objects.
+ *      Typical uses are profiling and instrumentation (basically this is a
+ *      way to add an instance field to java.lang.Object).
+ * <li> The instance fields.  Currently defined by various classloader classes.
+ *      Factoring this code out and making it possible to lay out the instance
+ *      fields in different ways is a todo item.
+ * </ul>
+ *
+ * Every object's header contains the three portions outlined above.
+ *
+ * <pre>
+ * |<- lo memory                                        hi memory ->|
+ *
+ *   SCALAR LAYOUT:
+ * |<---------- scalar header --------->|
+ * +----------+------------+------------+------+------+------+--------+
+ * | GCHeader | MiscHeader | JavaHeader | fldO | fld1 | fldx | fldN-1 |
+ * +----------+------------+------------+------+------+------+--------+
+ *                         ^ JHOFF             ^objref
+ *                                             .
+ *    ARRAY LAYOUT:                            .
+ * |<---------- array header ----------------->|
+ * +----------+------------+------------+------+------+------+------+------+
+ * | GCHeader | MiscHeader | JavaHeader | len  | elt0 | elt1 | ...  |eltN-1|
+ * +----------+------------+------------+------+------+------+------+------+
+ *                         ^ JHOFF             ^objref
+ * </pre>
+ *
+ * Assumptions:
+ * <ul>
+ * <li> Each portion of the header (JavaHeader, GCHeader, MiscHeader)
+ *      is some multiple of 4 bytes (possibly 0).  This simplifies access, since we
+ *      can access each portion independently without having to worry about word tearing.
+ * <li> The JavaHeader exports k (>=0) unused contiguous bits that can be used
+ *      by the GCHeader and MiscHeader.  The GCHeader gets first dibs on these bits.
+ *      The GCHeader should use buts 0..i, MiscHeader should use bits i..k.
+ * <li> JHOFF is a constant for a given configuration.
+ * </ul>
+ *
+ * This model allows efficient array access: the array pointer can be
+ * used directly in the base+offset subscript calculation, with no
+ * additional constant required.<p>
+ *
+ * This model allows free null pointer checking for most reads: a
+ * small offset from that reference will wrap around to either very
+ * high or very low unmapped memory in the case of a null pointer. As
+ * long as these segments of memory are not mapped to the current
+ * process, loads/stores through such a pointer will cause a trap that
+ * we can catch with a unix signal handler.<p>
+ *
+ * Note that on AIX we are forced to perform explicit null checks on
+ * scalar field accesses as we are unable to protect low memory.
+ *
+ * Note the key invariant that all elements of the header are
+ * available at the same offset from an objref for both arrays and
+ * scalar objects.
+ *
+ * Note that this model allows for arbitrary growth of the GC header
+ * to the left of the object.  A possible TODO item is to modify the
+ * necessary interfaces within this class and JavaHeader to allow
+ * moveObject, bytesUsed, bytesRequiredWhenCopied, etc. to tell this
+ * class how many GC header bytes have been allocated. As these calls
+ * would be constant within the constant of the call the optimising
+ * compiler should be able to allow this at minimal cost.
+ *
+ * Another possible TODO item is to include support for linear
+ * scanning, where it is possible to move from one object to the next
+ * under contiguous allocation. At the moment this is in conflict with
+ * object alignment code for objects with long/double fields. We could
+ * possibly include the code anyway but require that the alignment
+ * code is switched off, or that all objects are aligned.  Linear
+ * scanning is used in several GC algorithms including card-marking
+ * and compaction.
+ *
+ * @see JavaHeader
+ * @see MiscHeader
+ * @see MemoryManager
+ */
+@Uninterruptible
+public class ObjectModel implements JavaHeaderConstants, SizeConstants {
+
+  /** Should we gather stats on hash code state transitions for address-based hashing? */
+  public static final boolean HASH_STATS = false;
+  /** count number of Object.hashCode() operations */
+  public static int hashRequests = 0;
+  /** count transitions from UNHASHED to HASHED */
+  public static int hashTransition1 = 0;
+  /** count transitions from HASHED to HASHED_AND_MOVED */
+  public static int hashTransition2 = 0;
+
+  /** Whether to pack bytes and shorts into 32bit fields*/
+  private static final boolean PACKED = true;
+
+  /** Layout widget */
+  private static final FieldLayout layout;
+
+  static {
+    if (PACKED) {
+      layout = new FieldLayoutPacked(true, false);
+    } else {
+      layout = new FieldLayoutUnpacked(true, false);
+    }
+  }
+
+  /**
+   * Layout the instance fields declared in this class.
+   * @param klass the class to layout
+   */
+  @Interruptible
+  public static void layoutInstanceFields(RVMClass klass) {
+    layout.layoutInstanceFields(klass);
+  }
+
+  /**
+   * Given a reference, return an address which is guaranteed to be inside
+   * the memory region allocated to the object.
+   */
+  public static Address getPointerInMemoryRegion(ObjectReference ref) {
+    return JavaHeader.getPointerInMemoryRegion(ref);
+  }
+
+  /**
+   * Return the offset of the array length field from an object reference
+   * (in bytes)
+   */
+  public static Offset getArrayLengthOffset() {
+    return ARRAY_LENGTH_OFFSET;
+  }
+
+  /**
+   * Get the TIB for an object.
+   */
+  public static TIB getTIB(ObjectReference ptr) {
+    return getTIB(ptr.toObject());
+  }
+
+  /**
+   * Get the TIB for an object.
+   */
+  public static TIB getTIB(Object o) {
+    return JavaHeader.getTIB(o);
+  }
+
+  /**
+   * Set the TIB for an object.
+   */
+  public static void setTIB(ObjectReference ptr, TIB tib) {
+    setTIB(ptr.toObject(), tib);
+  }
+
+  /**
+   * Set the TIB for an object.
+   */
+  public static void setTIB(Object ref, TIB tib) {
+    JavaHeader.setTIB(ref, tib);
+  }
+
+  /**
+   * Set the TIB for an object.
+   */
+  @Interruptible
+  public static void setTIB(BootImageInterface bootImage, Address refAddress, Address tibAddr, RVMType type) {
+    JavaHeader.setTIB(bootImage, refAddress, tibAddr, type);
+  }
+
+  /**
+   * Get the pointer just past an object
+   */
+  public static Address getObjectEndAddress(Object obj) {
+    TIB tib = getTIB(obj);
+    RVMType type = tib.getType();
+    if (type.isClassType()) {
+      return getObjectEndAddress(obj, type.asClass());
+    } else {
+      int numElements = Magic.getArrayLength(obj);
+      return getObjectEndAddress(obj, type.asArray(), numElements);
+    }
+  }
+
+  /**
+   * Get the pointer just past an object
+   */
+  public static Address getObjectEndAddress(Object object, RVMClass type) {
+    return JavaHeader.getObjectEndAddress(object, type);
+  }
+
+  /**
+   * Get the pointer just past an object
+   */
+  public static Address getObjectEndAddress(Object object, RVMArray type, int elements) {
+    return JavaHeader.getObjectEndAddress(object, type, elements);
+  }
+
+  /**
+   * Get an object reference from the address the lowest word of the object was allocated.
+   */
+  public static ObjectReference getObjectFromStartAddress(Address start) {
+    return JavaHeader.getObjectFromStartAddress(start);
+  }
+
+  /**
+   * Get an object reference from the address the lowest word of the object was allocated.
+   */
+  public static ObjectReference getScalarFromStartAddress(Address start) {
+    return JavaHeader.getScalarFromStartAddress(start);
+  }
+
+  /**
+   * Get an object reference from the address the lowest word of the object was allocated.
+   */
+  public static ObjectReference getArrayFromStartAddress(Address start) {
+    return JavaHeader.getArrayFromStartAddress(start);
+  }
+
+  /**
+   * Get the next object in the heap under contiguous allocation.
+   */
+  public static ObjectReference getNextObject(ObjectReference obj) {
+    TIB tib = getTIB(obj);
+    RVMType type = tib.getType();
+    if (type.isClassType()) {
+      return getNextObject(obj, type.asClass());
+    } else {
+      int numElements = Magic.getArrayLength(obj);
+      return getNextObject(obj, type.asArray(), numElements);
+    }
+  }
+
+  /**
+   * Get the next object after this scalar under contiguous allocation.
+   */
+  public static ObjectReference getNextObject(ObjectReference obj, RVMClass type) {
+    return JavaHeader.getNextObject(obj, type);
+  }
+
+  /**
+   * Get the next object after this array under contiguous allocation.
+   */
+  public static ObjectReference getNextObject(ObjectReference obj, RVMArray type, int numElements) {
+    return JavaHeader.getNextObject(obj, type, numElements);
+  }
+
+  /**
+   * how many bytes are used by the object?
+   */
+  public static Object getReferenceWhenCopiedTo(Object obj, Address to) {
+    TIB tib = getTIB(obj);
+    RVMType type = tib.getType();
+    if (type.isClassType()) {
+      return getReferenceWhenCopiedTo(obj, to, type.asClass());
+    } else {
+      return getReferenceWhenCopiedTo(obj, to, type.asArray());
+    }
+  }
+
+  /**
+   * how many bytes are used by the object?
+   */
+  public static int bytesUsed(Object obj) {
+    TIB tib = getTIB(obj);
+    RVMType type = tib.getType();
+    if (type.isClassType()) {
+      return bytesUsed(obj, type.asClass());
+    } else {
+      int numElements = Magic.getArrayLength(obj);
+      return bytesUsed(obj, type.asArray(), numElements);
+    }
+  }
+
+  /**
+   * how many bytes are used by the scalar?
+   */
+  public static int bytesUsed(Object obj, RVMClass type) {
+    return JavaHeader.bytesUsed(obj, type);
+  }
+
+  /**
+   * how many bytes are used by the array?
+   */
+  public static int bytesUsed(Object obj, RVMArray type, int numElements) {
+    return JavaHeader.bytesUsed(obj, type, numElements);
+  }
+
+  /**
+   * how many bytes are required when the object is copied by GC?
+   */
+  public static int bytesRequiredWhenCopied(Object obj) {
+    TIB tib = getTIB(obj);
+    RVMType type = tib.getType();
+    if (type.isClassType()) {
+      return bytesRequiredWhenCopied(obj, type.asClass());
+    } else {
+      int numElements = Magic.getArrayLength(obj);
+      return bytesRequiredWhenCopied(obj, type.asArray(), numElements);
+    }
+  }
+
+  /**
+   * how many bytes are needed when the scalar object is copied by GC?
+   */
+  public static int bytesRequiredWhenCopied(Object fromObj, RVMClass type) {
+    return JavaHeader.bytesRequiredWhenCopied(fromObj, type);
+  }
+
+  /**
+   * how many bytes are needed when the array object is copied by GC?
+   */
+  public static int bytesRequiredWhenCopied(Object fromObj, RVMArray type, int numElements) {
+    return JavaHeader.bytesRequiredWhenCopied(fromObj, type, numElements);
+  }
+
+  /**
+   * Map from the object ref to the lowest address of the storage
+   * associated with the object
+   */
+  @Inline
+  public static Address objectStartRef(ObjectReference obj) {
+    return JavaHeader.objectStartRef(obj);
+  }
+
+  /**
+   * Get the reference of an object after copying to a specified region.
+   */
+  public static Object getReferenceWhenCopiedTo(Object obj, Address region, RVMClass type) {
+    return JavaHeader.getReferenceWhenCopiedTo(obj, region, type);
+  }
+
+  /**
+   * Get the reference of an object after copying to a specified region.
+   */
+  public static Object getReferenceWhenCopiedTo(Object obj, Address region, RVMArray type) {
+    return JavaHeader.getReferenceWhenCopiedTo(obj, region, type);
+  }
+
+  /**
+   * Copy a scalar object to the given raw storage address
+   */
+  public static Object moveObject(Object fromObj, Object toObj, int numBytes, RVMClass type) {
+    return JavaHeader.moveObject(fromObj, toObj, numBytes, type);
+  }
+
+  /**
+   * Copy an array object to the given raw storage address
+   */
+  public static Object moveObject(Object fromObj, Object toObj, int numBytes, RVMArray type) {
+    return JavaHeader.moveObject(fromObj, toObj, numBytes, type);
+  }
+
+  /**
+   * Copy a scalar object to the given raw storage address
+   */
+  public static Object moveObject(Address toAddress, Object fromObj, int numBytes, RVMClass type) {
+    return JavaHeader.moveObject(toAddress, fromObj, numBytes, type);
+  }
+
+  /**
+   * Copy an array object to the given raw storage address
+   */
+  public static Object moveObject(Address toAddress, Object fromObj, int numBytes, RVMArray type) {
+    return JavaHeader.moveObject(toAddress, fromObj, numBytes, type);
+  }
+
+  /**
+   * Get the type of an object.
+   */
+  public static RVMType getObjectType(Object o) {
+    return Magic.getObjectType(o);
+  }
+
+  /**
+   * Get the length of an array
+   */
+  public static int getArrayLength(Object o) {
+    return Magic.getIntAtOffset(o, getArrayLengthOffset());
+  }
+
+  /**
+   * Set the length of an array
+   */
+  public static void setArrayLength(Object o, int len) {
+    Magic.setIntAtOffset(o, getArrayLengthOffset(), len);
+  }
+
+  /**
+   * Get the hash code of an object.
+   */
+  @Interruptible
+  public static int getObjectHashCode(Object o) {
+    if (HASH_STATS) hashRequests++;
+    return JavaHeader.getObjectHashCode(o);
+  }
+
+  /**
+   * Get the offset of the thin lock word in this object
+   */
+  public static Offset getThinLockOffset(Object o) {
+    return JavaHeader.getThinLockOffset(o);
+  }
+
+  /**
+   * what is the default offset for a thin lock?
+   */
+  public static Offset defaultThinLockOffset() {
+    return JavaHeader.defaultThinLockOffset();
+  }
+
+  /**
+   * Allocate a thin lock word for instances of the type
+   * (if they already have one, then has no effect).
+   */
+  public static void allocateThinLock(RVMType t) {
+    JavaHeader.allocateThinLock(t);
+  }
+
+  /**
+   * Generic lock
+   */
+  @Entrypoint
+  @Unpreemptible("Become another thread when lock is contended, don't preempt in other cases")
+  public static void genericLock(Object o) {
+    JavaHeader.genericLock(o);
+  }
+
+  /**
+   * Generic unlock
+   */
+  @Entrypoint
+  @Unpreemptible("No preemption normally, but may raise exceptions")
+  public static void genericUnlock(Object o) {
+    JavaHeader.genericUnlock(o);
+  }
+
+  /**
+   * @param obj an object
+   * @param thread a thread
+   * @return <code>true</code> if the lock on obj is currently owned
+   *         by thread <code>false</code> if it is not.
+   */
+  public static boolean holdsLock(Object obj, RVMThread thread) {
+    return JavaHeader.holdsLock(obj, thread);
+  }
+
+  /**
+   * Obtains the heavy-weight lock, if there is one, associated with the
+   * indicated object.  Returns <code>null</code>, if there is no
+   * heavy-weight lock associated with the object.
+   *
+   * @param o the object from which a lock is desired
+   * @param create if true, create heavy lock if none found
+   * @return the heavy-weight lock on the object (if any)
+   */
+  @Unpreemptible("May be interrupted for allocations of locks")
+  public static Lock getHeavyLock(Object o, boolean create) {
+    return JavaHeader.getHeavyLock(o, create);
+  }
+
+  /**
+   * Non-atomic read of word containing available bits
+   */
+  public static Word readAvailableBitsWord(Object o) {
+    return JavaHeader.readAvailableBitsWord(o);
+  }
+
+  /**
+   * Non-atomic read of byte containing available bits
+   */
+  public static byte readAvailableByte(Object o) {
+    return JavaHeader.readAvailableByte(o);
+  }
+
+  /**
+   * Non-atomic write of word containing available bits
+   */
+  public static void writeAvailableBitsWord(Object o, Word val) {
+    JavaHeader.writeAvailableBitsWord(o, val);
+  }
+
+  /**
+   * Non-atomic write of byte containing available bits
+   */
+  public static void writeAvailableByte(Object o, byte val) {
+    JavaHeader.writeAvailableByte(o, val);
+  }
+
+  /**
+   * Return true if argument bit is 1, false if it is 0
+   */
+  public static boolean testAvailableBit(Object o, int idx) {
+    return JavaHeader.testAvailableBit(o, idx);
+  }
+
+  /**
+   * Set argument bit to 1 if flag is true, 0 if flag is false
+   */
+  public static void setAvailableBit(Object o, int idx, boolean flag) {
+    JavaHeader.setAvailableBit(o, idx, flag);
+  }
+
+  /**
+   * Freeze the other bits in the byte containing the available bits
+   * so that it is safe to update them using setAvailableBits.
+   */
+  @Interruptible
+  public static void initializeAvailableByte(Object o) {
+    JavaHeader.initializeAvailableByte(o);
+  }
+
+  /**
+   * A prepare on the word containing the available bits
+   */
+  public static Word prepareAvailableBits(Object o) {
+    return JavaHeader.prepareAvailableBits(o);
+  }
+
+  /**
+   * An attempt on the word containing the available bits
+   */
+  public static boolean attemptAvailableBits(Object o, Word oldVal, Word newVal) {
+    return JavaHeader.attemptAvailableBits(o, oldVal, newVal);
+  }
+
+  /**
+   * Given the smallest base address in a region, return the smallest
+   * object reference that could refer to an object in the region.
+   */
+  public static Address minimumObjectRef(Address regionBaseAddr) {
+    return JavaHeader.minimumObjectRef(regionBaseAddr);
+  }
+
+  /**
+   * Given the largest base address in a region, return the largest
+   * object reference that could refer to an object in the region.
+   */
+  public static Address maximumObjectRef(Address regionHighAddr) {
+    return JavaHeader.maximumObjectRef(regionHighAddr);
+  }
+
+  /**
+   * Compute the header size of an instance of the given type.
+   */
+  @Inline
+  public static int computeHeaderSize(RVMType type) {
+    if (type.isArrayType()) {
+      return computeArrayHeaderSize(type.asArray());
+    } else {
+      return computeScalarHeaderSize(type.asClass());
+    }
+  }
+
+  /**
+   * Compute the header size of an object
+   */
+  @Interruptible
+  public static int computeHeaderSize(Object ref) {
+    return computeHeaderSize(getObjectType(ref));
+  }
+
+  /**
+   * Compute the header size of an instance of the given type.
+   */
+  @Inline
+  public static int computeScalarHeaderSize(RVMClass type) {
+    return JavaHeader.computeScalarHeaderSize(type);
+  }
+
+  /**
+   * Compute the header size of an instance of the given type.
+   */
+  public static int computeArrayHeaderSize(RVMArray type) {
+    return JavaHeader.computeArrayHeaderSize(type);
+  }
+
+  /**
+   * Given a TIB, compute the header size of an instance of the TIB's class
+   */
+  public static int computeHeaderSize(Object[] tib) {
+    return computeHeaderSize(Magic.objectAsType(tib[0]));
+  }
+
+  /**
+   * For a reference to an object, what is the offset in bytes to the
+   * last word of the header from an out-to-in perspective for the object?
+   */
+  public static int getHeaderEndOffset() {
+    return JavaHeader.getHeaderEndOffset();
+  }
+
+  /**
+   * For a reference to an object, what is the offset in bytes to the bottom
+   * word of the object?
+   */
+  public static int objectStartOffset(RVMClass t) {
+    return JavaHeader.objectStartOffset(t);
+  }
+
+  /**
+   * Return the desired aligment of the alignment point in the object returned
+   * by getScalarOffsetForAlignment.
+   * @param t RVMClass instance being created
+   */
+  public static int getAlignment(RVMClass t) {
+    return JavaHeader.getAlignment(t);
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMClass.
+   * @param t RVMClass instance being copied
+   * @param obj the object being copied
+   */
+  public static int getAlignment(RVMClass t, Object obj) {
+    return JavaHeader.getAlignment(t, obj);
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMArray.
+   * @param t RVMArray instance being created
+   */
+  public static int getAlignment(RVMArray t) {
+    return JavaHeader.getAlignment(t);
+  }
+
+  /**
+   * Return the desired aligment of the alignment point returned by
+   * getOffsetForAlignment in instances of the argument RVMArray.
+   * @param t RVMArray instance being copied
+   * @param obj the object being copied
+   */
+  public static int getAlignment(RVMArray t, Object obj) {
+    return JavaHeader.getAlignment(t, obj);
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object
+   * that must be aligned.
+   * @param t RVMClass instance being created
+   */
+  public static int getOffsetForAlignment(RVMClass t, boolean needsIdentityHash) {
+    return JavaHeader.getOffsetForAlignment(t, needsIdentityHash);
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object
+   * that must be aligned.
+   * @param t RVMClass instance being copied
+   * @param obj the object being copied
+   */
+  public static int getOffsetForAlignment(RVMClass t, ObjectReference obj) {
+    return JavaHeader.getOffsetForAlignment(t, obj);
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object that must
+   * be aligned.
+   * @param t RVMArray instance being created
+   */
+  public static int getOffsetForAlignment(RVMArray t, boolean needsIdentityHash) {
+    return JavaHeader.getOffsetForAlignment(t, needsIdentityHash);
+  }
+
+  /**
+   * Return the offset relative to physical beginning of object that must
+   * be aligned.
+   * @param t RVMArray instance being copied
+   * @param obj the object being copied
+   */
+  public static int getOffsetForAlignment(RVMArray t, ObjectReference obj) {
+    return JavaHeader.getOffsetForAlignment(t, obj);
+  }
+
+  /**
+   * Initialize raw storage with low memory word ptr of size bytes
+   * to be an uninitialized instance of the (scalar) type specified by tib.
+   *
+   * @param ptr address of raw storage
+   * @param tib the type information block
+   * @param size number of bytes of raw storage allocated.
+   */
+  @Inline
+  public static Object initializeScalar(Address ptr, TIB tib, int size) {
+    Object ref = JavaHeader.initializeScalarHeader(ptr, tib, size);
+    MiscHeader.initializeHeader(ref, tib, size, true);
+    setTIB(ref, tib);
+    return ref;
+  }
+
+  /**
+   * Allocate and initialize space in the bootimage (at bootimage writing time)
+   * to be an uninitialized instance of the (scalar) type specified by klass.
+   * NOTE: TIB is set by BootImageWriter2
+   *
+   * @param bootImage the bootimage to put the object in
+   * @param klass the RVMClass object of the instance to create.
+   * @param needsIdentityHash needs an identity hash value
+   * @param identityHashValue the value for the identity hash
+   * @return the offset of object in bootimage (in bytes)
+   */
+  @Interruptible
+  public static Address allocateScalar(BootImageInterface bootImage, RVMClass klass, boolean needsIdentityHash, int identityHashValue) {
+    TIB tib = klass.getTypeInformationBlock();
+    int size = klass.getInstanceSize();
+    if (needsIdentityHash) {
+      if (JavaHeader.ADDRESS_BASED_HASHING) {
+        size += JavaHeader.HASHCODE_BYTES;
+      } else {
+        // TODO: support rehashing or header initialisation for object models
+        // that don't support an extra word for the hash code
+        throw new Error("Unsupported allocation");
+      }
+    }
+    int align = getAlignment(klass);
+    int offset = getOffsetForAlignment(klass, needsIdentityHash);
+    Address ptr = bootImage.allocateDataStorage(size, align, offset);
+    Address ref = JavaHeader.initializeScalarHeader(bootImage, ptr, tib, size, needsIdentityHash, identityHashValue);
+    MemoryManager.initializeHeader(bootImage, ref, tib, size, true);
+    MiscHeader.initializeHeader(bootImage, ref, tib, size, true);
+    return ref;
+  }
+
+  /**
+   * Fill an alignment gap with the alignment value
+   */
+  @Interruptible
+  public static void fillAlignmentGap(BootImageInterface bootImage, Address address, Extent size) {
+    while (size.GT(Extent.zero())) {
+      bootImage.setFullWord(address, JavaHeader.ALIGNMENT_VALUE);
+      address = address.plus(BYTES_IN_INT);
+      size = size.minus(BYTES_IN_INT);
+    }
+  }
+
+  /**
+   * Initialize raw storage with low memory word ptr of size bytes
+   * to be an uninitialized instance of the array type specific by tib
+   * with numElems elements.
+   *
+   * @param ptr address of raw storage
+   * @param tib the type information block
+   * @param numElems number of elements in the array
+   * @param size number of bytes of raw storage allocated.
+   */
+  @Inline
+  public static Object initializeArray(Address ptr, TIB tib, int numElems, int size) {
+    Object ref = JavaHeader.initializeArrayHeader(ptr, tib, size);
+    MiscHeader.initializeHeader(ref, tib, size, false);
+    setTIB(ref, tib);
+    setArrayLength(ref, numElems);
+    return ref;
+  }
+
+  /**
+   * Allocate and initialize space in the bootimage (at bootimage writing time)
+   * to be an uninitialized instance of the (array) type specified by array.
+   * NOTE: TIB is set by BootimageWriter2
+   *
+   * @param bootImage the bootimage to put the object in
+   * @param array RVMArray object of array being allocated.
+   * @param numElements number of elements
+   * @param needsIdentityHash needs an identity hash value
+   * @param identityHashValue the value for the identity hash
+   * @return Address of object in bootimage (in bytes)
+   */
+  @Interruptible
+  public static Address allocateArray(BootImageInterface bootImage, RVMArray array, int numElements, boolean needsIdentityHash, int identityHashValue) {
+    int align = getAlignment(array);
+    return allocateArray(bootImage, array, numElements, needsIdentityHash, identityHashValue, align);
+  }
+
+  /**
+   * Allocate and initialize space in the bootimage (at bootimage writing time)
+   * to be an uninitialized instance of the (array) type specified by array.
+   * NOTE: TIB is set by BootimageWriter2
+   *
+   * @param bootImage the bootimage to put the object in
+   * @param array RVMArray object of array being allocated.
+   * @param numElements number of elements
+   * @param needsIdentityHash needs an identity hash value
+   * @param identityHashValue the value for the identity hash
+   * @return Address of object in bootimage (in bytes)
+   */
+  @Interruptible
+  public static Address allocateArray(BootImageInterface bootImage, RVMArray array, int numElements, boolean needsIdentityHash, int identityHashValue, int align) {
+    TIB tib = array.getTypeInformationBlock();
+    int size = array.getInstanceSize(numElements);
+    if (needsIdentityHash) {
+      if (JavaHeader.ADDRESS_BASED_HASHING) {
+        size += JavaHeader.HASHCODE_BYTES;
+      } else {
+        // TODO: support rehashing or header initialisation for object models
+        // that don't support an extra word for the hash code
+        throw new Error("Unsupported allocation");
+      }
+    }
+    int offset = getOffsetForAlignment(array, needsIdentityHash);
+    Address ptr = bootImage.allocateDataStorage(size, align, offset);
+    Address ref = JavaHeader.initializeArrayHeader(bootImage, ptr, tib, size, numElements, needsIdentityHash, identityHashValue);
+    bootImage.setFullWord(ref.plus(getArrayLengthOffset()), numElements);
+    MemoryManager.initializeHeader(bootImage, ref, tib, size, false);
+    MiscHeader.initializeHeader(bootImage, ref, tib, size, false);
+    return ref;
+  }
+
+  /**
+   * Allocate and initialize space in the bootimage (at bootimage writing time)
+   * to be an uninitialized instance of the (array) type specified by array.
+   * NOTE: TIB is set by BootimageWriter2
+   *
+   * @param bootImage the bootimage to put the object in
+   * @param array RVMArray object of array being allocated.
+   * @param numElements number of elements
+   * @return Address of object in bootimage
+   */
+  @Interruptible
+  public static Address allocateCode(BootImageInterface bootImage, RVMArray array, int numElements) {
+    TIB tib = array.getTypeInformationBlock();
+    int size = array.getInstanceSize(numElements);
+    int align = getAlignment(array);
+    int offset = getOffsetForAlignment(array, false);
+    Address ptr = bootImage.allocateCodeStorage(size, align, offset);
+    Address ref = JavaHeader.initializeArrayHeader(bootImage, ptr, tib, size, numElements, false, 0);
+    bootImage.setFullWord(ref.plus(getArrayLengthOffset()), numElements);
+    MemoryManager.initializeHeader(bootImage, ref, tib, size, false);
+    MiscHeader.initializeHeader(bootImage, ref, tib, size, false);
+    return ref;
+  }
+
+  /**
+   * For low level debugging of GC subsystem.
+   * Dump the header word(s) of the given object reference.
+   * @param ptr the object reference whose header should be dumped
+   */
+  public static void dumpHeader(ObjectReference ptr) {
+    dumpHeader(ptr.toObject());
+  }
+
+  /**
+   * For low level debugging of GC subsystem.
+   * Dump the header word(s) of the given object reference.
+   * @param ref the object reference whose header should be dumped
+   */
+  public static void dumpHeader(Object ref) {
+    VM.sysWrite(" TIB=");
+    VM.sysWrite(Magic.objectAsAddress(getTIB(ref)));
+    JavaHeader.dumpHeader(ref);
+    MiscHeader.dumpHeader(ref);
+  }
+
+  /**
+   * For debugging.
+   */
+  public static void describeObject(ObjectReference addr) {
+    Object obj = addr.toObject();
+    RVMType type = Magic.getObjectType(obj);
+    VM.sysWrite(type.getDescriptor());
+  }
+
+  /**
+   * The following method will emit code that moves a reference to an
+   * object's TIB into a destination register.
+   *
+   * @param asm the assembler object to emit code with
+   * @param dest the number of the destination register
+   * @param object the number of the register holding the object reference
+   */
+  @Interruptible
+  public static void baselineEmitLoadTIB(Assembler asm, int dest, int object) {
+    JavaHeader.baselineEmitLoadTIB(asm, dest, object);
+  }
+}
+
+
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.vmmagic.Intrinsic;
+
+/**
+ * This interface is used to indicate a type will behave as a runtime table.
+ * Runtime tables are used to implement arrays whose elements can only be
+ * manipulated by the the get and set methods of the table. Every runtime table
+ * will have a static allocate method and implement the methods below.
+ *
+ * @see org.jikesrvm.classloader.TypeReference#isRuntimeTable()
+ */
+public interface RuntimeTable<T> {
+  /**
+   * Get a value from the table. This method is hijacked by the compiler but the
+   * implementation is used during boot image writing.
+   *
+   * @param index location to read
+   * @return value from table
+   */
+  @Intrinsic
+  T get(int index);
+  /**
+   * Set a value to the table. This method is hijacked by the compiler but the
+   * implementation is used during boot image writing.
+   *
+   * @param index location to write
+   * @param value to write
+   */
+  @Intrinsic
+  void set(int index, T value);
+  /**
+   * Get the table length. This method is hijacked by the compiler but the
+   * implementation is used during boot image writing.
+   *
+   * @return length of table
+   */
+  @Intrinsic
+  int length();
+  /**
+   * Only called at boot image write time. This returns the backing array to the
+   * boot image writer.
+   *
+   * @return backing array of elements
+   */
+  @Intrinsic
+  T[] getBacking();
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.scheduler.RVMThread;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * Constants used to implement thin locks.
+ * A portion of a word, either in the object header
+ * or in some other location, is used to provide light weight
+ * synchronization operations. This class defines
+ * how the bits available for thin locks are allocated.
+ * Either a lock is in fat state, in which case it looks like
+ * 1Z..Z where Z..Z is the id of a heavy lock, or it is in
+ * thin state in which case it looks like 0I..IC..C where
+ * I is the thread id of the thread that owns the lock and
+ * C is the recursion count of the lock.
+ * <pre>
+ * aaaaTTTTTTTTTTbbbbb
+ * JavaHeader.NUM_THIN_LOCK_BITS = # of T's
+ * JavaHeader.THIN_LOCK_SHIFT = # of b's
+ * </pre>
+ */
+public interface ThinLockConstants extends SizeConstants {
+
+  // biased locking / thin locking status bits:
+  // 00 -> thin biasable, and biased if TID is non-zero
+  // 01 -> thin unbiasable
+  // 10 -> fat unbiasable
+
+  int TL_NUM_BITS_STAT = 2;
+  int TL_NUM_BITS_TID = RVMThread.LOG_MAX_THREADS;
+  int TL_NUM_BITS_RC = JavaHeader.NUM_THIN_LOCK_BITS - TL_NUM_BITS_TID - TL_NUM_BITS_STAT;
+
+  int TL_THREAD_ID_SHIFT = JavaHeader.THIN_LOCK_SHIFT;
+  int TL_LOCK_COUNT_SHIFT = TL_THREAD_ID_SHIFT + TL_NUM_BITS_TID;
+  int TL_STAT_SHIFT = TL_LOCK_COUNT_SHIFT + TL_NUM_BITS_RC;
+  int TL_LOCK_ID_SHIFT = JavaHeader.THIN_LOCK_SHIFT;
+  int TL_DEDICATED_U16_OFFSET = JavaHeader.THIN_LOCK_DEDICATED_U16_OFFSET;
+  int TL_DEDICATED_U16_SHIFT = JavaHeader.THIN_LOCK_DEDICATED_U16_SHIFT;
+
+  Word TL_LOCK_COUNT_UNIT = Word.fromIntSignExtend(1 << TL_LOCK_COUNT_SHIFT);
+
+  Word TL_LOCK_COUNT_MASK = Word.fromIntSignExtend(-1).rshl(BITS_IN_ADDRESS - TL_NUM_BITS_RC).lsh(TL_LOCK_COUNT_SHIFT);
+  Word TL_THREAD_ID_MASK = Word.fromIntSignExtend(-1).rshl(BITS_IN_ADDRESS - TL_NUM_BITS_TID).lsh(TL_THREAD_ID_SHIFT);
+  Word TL_LOCK_ID_MASK =
+      Word.fromIntSignExtend(-1).rshl(BITS_IN_ADDRESS - (TL_NUM_BITS_RC + TL_NUM_BITS_TID)).lsh(TL_LOCK_ID_SHIFT);
+  Word TL_STAT_MASK = Word.fromIntSignExtend(-1).rshl(BITS_IN_ADDRESS - TL_NUM_BITS_TID).lsh(TL_STAT_SHIFT);
+  Word TL_UNLOCK_MASK = Word.fromIntSignExtend(-1).rshl(BITS_IN_ADDRESS - JavaHeader
+      .NUM_THIN_LOCK_BITS).lsh(JavaHeader.THIN_LOCK_SHIFT).not();
+
+  Word TL_STAT_BIASABLE = Word.fromIntSignExtend(0).lsh(TL_STAT_SHIFT);
+  Word TL_STAT_THIN = Word.fromIntSignExtend(1).lsh(TL_STAT_SHIFT);
+  Word TL_STAT_FAT = Word.fromIntSignExtend(2).lsh(TL_STAT_SHIFT);
+}
+
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.SizeConstants;
+import org.jikesrvm.classloader.RVMType;
+import org.jikesrvm.ArchitectureSpecific.ArchConstants;
+import org.jikesrvm.ArchitectureSpecific.CodeArray;
+import org.jikesrvm.ArchitectureSpecific.LazyCompilationTrampoline;
+import org.jikesrvm.runtime.Magic;
+import org.vmmagic.Intrinsic;
+import org.vmmagic.pragma.Inline;
+import org.vmmagic.pragma.Interruptible;
+import org.vmmagic.pragma.NoInline;
+import org.vmmagic.pragma.NonMoving;
+import org.vmmagic.pragma.Uninterruptible;
+import org.vmmagic.pragma.UninterruptibleNoWarn;
+import org.vmmagic.unboxed.Address;
+import org.vmmagic.unboxed.Offset;
+import org.vmmagic.unboxed.Word;
+
+/**
+ * This class represents an instance of a type information block, at runtime it
+ * is an array with Object elements.
+ * @see TIBLayoutConstants
+ */
+@Uninterruptible
+@NonMoving
+public final class TIB implements RuntimeTable<Object>, TIBLayoutConstants, SizeConstants {
+  /**
+   * @return the number of words required to hold the lazy method invoker trampoline.
+   */
+  public static int lazyMethodInvokerTrampolineWords() {
+    int codeWords = VM.BuildForIA32 ? (VM.BuildFor32Addr ? 2 : 1) : (VM.BuildFor32Addr ? 3 : 2);
+    if (VM.runningVM && VM.VerifyAssertions) {
+      int codeBytes = LazyCompilationTrampoline.instructions.length() << ArchConstants.LG_INSTRUCTION_WIDTH;
+      VM._assert(codeWords == ((codeBytes + BYTES_IN_ADDRESS - 1) >>> LOG_BYTES_IN_ADDRESS));
+    }
+    return codeWords;
+  }
+
+  /**
+   * Calculate the size of a TIB
+   */
+  @NoInline
+  public static int computeSize(int numVirtualMethods) {
+    return TIB_FIRST_VIRTUAL_METHOD_INDEX + numVirtualMethods + lazyMethodInvokerTrampolineWords();
+  }
+
+  /**
+   * Calculate the virtual method offset for the given index.
+   * @param virtualMethodIndex The index to calculate the offset for
+   * @return The offset.
+   */
+  public static Offset getVirtualMethodOffset(int virtualMethodIndex) {
+    return Offset.fromIntZeroExtend((TIB_FIRST_VIRTUAL_METHOD_INDEX + virtualMethodIndex) << LOG_BYTES_IN_ADDRESS);
+  }
+
+  /**
+   * Calculate the virtual method index for the given offset.
+   * @param virtualMethodOffset The offset to calculate the index for
+   * @return The index.
+   */
+  public static int getVirtualMethodIndex(Offset virtualMethodOffset) {
+    return (virtualMethodOffset.toInt() >>> LOG_BYTES_IN_ADDRESS) - TIB_FIRST_VIRTUAL_METHOD_INDEX;
+  }
+
+  /**
+   * Calculate the virtual method index for the given raw slot index.
+   *
+   * @param slot The raw slot to find the virtual method index for.
+   * @return The index.
+   */
+  public static int getVirtualMethodIndex(int slot) {
+    if (VM.VerifyAssertions) VM._assert(slot > TIB_FIRST_VIRTUAL_METHOD_INDEX);
+    return slot - TIB_FIRST_VIRTUAL_METHOD_INDEX;
+  }
+
+  /**
+   * The backing data used during boot image writing.
+   */
+  private final Object[] data;
+
+  /**
+   * Private constructor. Can not create instances.
+   */
+  private TIB(int size) {
+    this.data = new Object[size];
+  }
+
+  /**
+   * Return the backing array (for boot image writing)
+   */
+  public Object[] getBacking() {
+    if (VM.VerifyAssertions) VM._assert(!VM.runningVM);
+    return data;
+  }
+
+  /**
+   * Create a new TIB of the specified size.
+   *
+   * @param size The size of the TIB
+   * @return The created TIB instance.
+   */
+  @NoInline
+  @Interruptible
+  public static TIB allocate(int size) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return new TIB(size);
+  }
+
+  /**
+   * Get a TIB entry.
+   *
+   * @param index The index of the entry to get
+   * @return The value of that entry
+   */
+  @Intrinsic
+  public Object get(int index) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    return data[index];
+  }
+
+  /**
+   * Set a TIB entry.
+   *
+   * @param index The index of the entry to set
+   * @param value The value to set the entry to.
+   */
+  @Intrinsic
+  @UninterruptibleNoWarn("Interruptible code not reachable at runtime")
+  public void set(int index, Object value) {
+    if (VM.VerifyAssertions && VM.runningVM) VM._assert(VM.NOT_REACHED);
+    data[index] = value;
+  }
+
+  /**
+   * Return the length of the TIB
+   */
+  @Intrinsic
+  public int length() {
+    return data.length;
+  }
+
+  /**
+   * Get the type for this TIB.
+   */
+  @Inline
+  public RVMType getType() {
+    if (VM.runningVM) {
+      return Magic.objectAsType(get(TIB_TYPE_INDEX));
+    } else {
+      return (RVMType)get(TIB_TYPE_INDEX);
+    }
+  }
+
+  /**
+   * Set the type for this TIB.
+   */
+  public void setType(RVMType type) {
+    set(TIB_TYPE_INDEX, type);
+  }
+
+  /**
+   * Get the superclass id set for this type.
+   */
+  @Inline
+  public short[] getSuperclassIds() {
+    return Magic.objectAsShortArray(get(TIB_SUPERCLASS_IDS_INDEX));
+  }
+
+  /**
+   * Set the superclass id set for this type.
+   */
+  public void setSuperclassIds(short[] superclassIds) {
+    set(TIB_SUPERCLASS_IDS_INDEX, superclassIds);
+  }
+
+  /**
+   * Get the ITable array for this type.
+   */
+  @Interruptible
+  public ITableArray getITableArray() {
+    if (VM.VerifyAssertions) VM._assert(getType().isClassType());
+    return (ITableArray)get(TIB_INTERFACE_DISPATCH_TABLE_INDEX);
+  }
+
+  /**
+   * Set the ITable array for this type.
+   */
+  public void setITableArray(ITableArray iTableArray) {
+    if (VM.VerifyAssertions) VM._assert(getType().isClassType());
+    set(TIB_INTERFACE_DISPATCH_TABLE_INDEX, iTableArray);
+  }
+
+  /**
+   * Get the does implement entry of the TIB
+   */
+  @Inline
+  public int[] getDoesImplement() {
+    return Magic.objectAsIntArray(get(TIB_DOES_IMPLEMENT_INDEX));
+  }
+
+  /**
+   * Set the does implement entry of the TIB
+   */
+  public void setDoesImplement(int[] doesImplement) {
+    set(TIB_DOES_IMPLEMENT_INDEX, doesImplement);
+  }
+
+  /**
+   * Get the IMT from the TIB
+   */
+  @Interruptible
+  public IMT getImt() {
+    if (VM.VerifyAssertions) VM._assert(getType().isClassType());
+    return (IMT)get(TIB_INTERFACE_DISPATCH_TABLE_INDEX);
+  }
+
+  /**
+   * Set the IMT of the TIB
+   */
+  public void setImt(IMT imt) {
+    if (VM.VerifyAssertions) VM._assert(imt.length() == IMT_METHOD_SLOTS);
+    if (VM.VerifyAssertions) VM._assert(getType().isClassType());
+    set(TIB_INTERFACE_DISPATCH_TABLE_INDEX, imt);
+  }
+
+  /**
+   * Set the TIB of the elements of this array (null if not an array).
+   */
+  public void setArrayElementTib(TIB arrayElementTIB) {
+    if (VM.VerifyAssertions) VM._assert(getType().isArrayType());
+    set(TIB_ARRAY_ELEMENT_TIB_INDEX, Magic.tibAsObject(arrayElementTIB));
+  }
+
+  /**
+   * Get a virtual method from this TIB.
+   *
+   * When running the VM, we must translate requests to return the internal
+   * lazy compilation trampoline marker.
+   */
+  @NoInline
+  @Interruptible
+  public CodeArray getVirtualMethod(int virtualMethodIndex) {
+    int index = TIB_FIRST_VIRTUAL_METHOD_INDEX + virtualMethodIndex;
+    if (VM.runningVM && isInternalLazyCompilationTrampoline(virtualMethodIndex)) {
+      return LazyCompilationTrampoline.instructions;
+    }
+    return (CodeArray) get(index);
+  }
+
+  /**
+   * Determine if a virtual method is the internal lazy compilation trampoline.
+   */
+  @NoInline
+  public boolean isInternalLazyCompilationTrampoline(int virtualMethodIndex) {
+    int index = TIB_FIRST_VIRTUAL_METHOD_INDEX + virtualMethodIndex;
+    Address tibAddress = Magic.objectAsAddress(this);
+    Address callAddress = tibAddress.loadAddress(Offset.fromIntZeroExtend(index << LOG_BYTES_IN_ADDRESS));
+    Address maxAddress = tibAddress.plus(Offset.fromIntZeroExtend(length() << LOG_BYTES_IN_ADDRESS));
+    return callAddress.GE(tibAddress) && callAddress.LT(maxAddress);
+  }
+
+  /**
+   * Get a virtual method from this TIB by offset.
+   */
+  @Interruptible
+  public CodeArray getVirtualMethod(Offset virtualMethodOffset) {
+    return getVirtualMethod(getVirtualMethodIndex(virtualMethodOffset));
+  }
+
+  /**
+   * Set a virtual method in this TIB.
+   *
+   * When running the VM, we must translate requests to use the internal
+   * lazy compilation trampoline.
+   */
+  @NoInline
+  public void setVirtualMethod(int virtualMethodIndex, CodeArray code) {
+    if (VM.VerifyAssertions) VM._assert(virtualMethodIndex >= 0);
+
+    if (VM.runningVM && code == LazyCompilationTrampoline.instructions) {
+      Address tibAddress = Magic.objectAsAddress(this);
+      Address callAddress = tibAddress.plus(Offset.fromIntZeroExtend(lazyMethodInvokerTrampolineIndex() << LOG_BYTES_IN_ADDRESS));
+      set(TIB_FIRST_VIRTUAL_METHOD_INDEX + virtualMethodIndex, callAddress);
+    } else {
+      set(TIB_FIRST_VIRTUAL_METHOD_INDEX + virtualMethodIndex, code);
+    }
+  }
+
+  /**
+   * Set a virtual method in this TIB by offset.
+   */
+  public void setVirtualMethod(Offset virtualMethodOffset, CodeArray code) {
+    setVirtualMethod(getVirtualMethodIndex(virtualMethodOffset), code);
+  }
+
+  /**
+   * Calculate the address that is the call target for the lazy method invoker trampoline.
+   * @return the offset of the instruction that is the call target
+   */
+  public int lazyMethodInvokerTrampolineIndex() {
+    return length() - lazyMethodInvokerTrampolineWords();
+  }
+
+  /**
+   * Initialize the lazy method invoker trampoline for this tib.
+   */
+  @NoInline
+  public void initializeInternalLazyCompilationTrampoline() {
+    CodeArray source = LazyCompilationTrampoline.instructions;
+    int targetSlot = lazyMethodInvokerTrampolineIndex();
+    int logIPW = LOG_BYTES_IN_ADDRESS - ArchConstants.LG_INSTRUCTION_WIDTH;
+    int logIPI = LOG_BYTES_IN_INT - ArchConstants.LG_INSTRUCTION_WIDTH;
+    if (VM.VerifyAssertions) VM._assert(ArchConstants.LG_INSTRUCTION_WIDTH <= LOG_BYTES_IN_INT);
+    int mask = 0xFFFFFFFF >>> (((1 << logIPI) - 1) << LOG_BITS_IN_BYTE);
+    for(int i = 0; i < lazyMethodInvokerTrampolineWords(); i++) {
+      Word currentWord = Word.zero();
+      int base = i << logIPW;
+      for(int j=0; j < (1 << logIPW) && (base + j) < source.length(); j++) {
+        Word currentEntry = Word.fromIntZeroExtend(source.get(base + j) & mask);
+        currentEntry = currentEntry.lsh(((VM.LittleEndian ? j : (1 << logIPW) - (j+1)) << ArchConstants.LG_INSTRUCTION_WIDTH) << LOG_BITS_IN_BYTE);
+        currentWord = currentWord.or(currentEntry);
+      }
+      set(targetSlot + i, currentWord);
+    }
+  }
+
+
+  /**
+   * Set a specialized method in this TIB.
+   */
+  public void setSpecializedMethod(int specializedMethodIndex, CodeArray code) {
+    if (VM.VerifyAssertions) VM._assert(specializedMethodIndex >= 0);
+    set(TIB_FIRST_SPECIALIZED_METHOD_INDEX + specializedMethodIndex, code);
+  }
+
+  /**
+   * The number of virtual methods in this TIB.
+   */
+  public int numVirtualMethods() {
+    return length() - TIB_FIRST_VIRTUAL_METHOD_INDEX - lazyMethodInvokerTrampolineWords();
+  }
+
+  /**
+   * Does this slot in the TIB hold a TIB entry?
+   * @param slot the TIB slot
+   * @return true if this the array element TIB
+   */
+  public boolean slotContainsTib(int slot) {
+    if (slot == TIB_ARRAY_ELEMENT_TIB_INDEX && getType().isArrayType()) {
+      if (VM.VerifyAssertions) VM._assert(get(slot) != null);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Does this slot in the TIB hold code?
+   * @param slot the TIB slot
+   * @return true if slot is one that holds a code array reference
+   */
+  public boolean slotContainsCode(int slot) {
+    if (VM.VerifyAssertions) {
+      VM._assert(slot < length());
+    }
+    return slot >= TIB_FIRST_VIRTUAL_METHOD_INDEX;
+  }
+}
+/*
+ *  This file is part of the Jikes RVM project (http://jikesrvm.org).
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License. You
+ *  may obtain a copy of the License at
+ *
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ *  See the COPYRIGHT.txt file distributed with this work for information
+ *  regarding copyright ownership.
+ */
+package org.jikesrvm.objectmodel;
+
+import org.jikesrvm.VM;
+import org.jikesrvm.classloader.SpecializedMethodManager;
+
+/**
+ * Layout the TIB (Type Information Block).
+ */
+
+public interface TIBLayoutConstants {
+
+  //--------------------------------------------------------------------------------------------//
+  //                      Type Information Block (TIB) Layout Constants                         //
+  //--------------------------------------------------------------------------------------------//
+  //
+  //                               Object[] (type info block)        RVMType (class info)
+  //                                  /                              /
+  //          +--------------------+              +--------------+
+  //          |    TIB pointer     |              |  TIB pointer |
+  //          +--------------------+              +--------------+
+  //          |      status        |              |    status    |
+  //          +--------------------+              +--------------+
+  //          |      length        |              |    field0    |
+  //          +--------------------+              +--------------+
+  //  TIB:  0:|       type         +------------> |     ...      |
+  //          +--------------------+              +--------------+
+  //        1:|   superclass ids   +-->           |   fieldN-1   |
+  //          +--------------------+              +--------------+
+  //        2:|  implements trits  +-->
+  //          +--------------------+
+  //        3:|  array element TIB +-->
+  //          +--------------------+
+  //        4:|     iTABLES/IMT    +-->
+  //          +--------------------+
+  //        5:|  specialized 0     +-->
+  //          +--------------------+
+  //          |       ...          +-->
+  //          +--------------------+
+  //       V0:|  virtual method 0  +-----+
+  //          +--------------------+     |
+  //          |       ...          |     |                         INSTRUCTION[] (machine code)
+  //          +--------------------+     |                        /
+  //     VN-1:| virtual method N-1 |     |        +--------------+
+  //          +--------------------+     |        |  TIB pointer |
+  //                                     |        +--------------+
+  //                                     |        |    status    |
+  //                                     |        +--------------+
+  //                                     |        |    length    |
+  //                                     |        +--------------+
+  //                                     +------->|    code0     |
+  //                                              +--------------+
+  //                                              |      ...     |
+  //                                              +--------------+
+  //                                              |    codeN-1   |
+  //                                              +--------------+
+  //
+
+  // Number of slots reserved for interface method pointers.
+  //
+  int IMT_METHOD_SLOTS = VM.BuildForIMTInterfaceInvocation ? 29 : 0;
+
+  // First slot of tib points to RVMType (slot 0 in above diagram).
+  //
+  int TIB_TYPE_INDEX = 0;
+
+  // A vector of ids for classes that this one extends.
+  // (see vm/classLoader/DynamicTypeCheck.java)
+  //
+  int TIB_SUPERCLASS_IDS_INDEX = TIB_TYPE_INDEX + 1;
+
+  // "Does this class implement the ith interface?"
+  // (see vm/classLoader/DynamicTypeCheck.java)
+  //
+  int TIB_DOES_IMPLEMENT_INDEX = TIB_SUPERCLASS_IDS_INDEX + 1;
+
+  // The TIB of the elements type of an array (may be null in fringe cases
+  // when element type couldn't be resolved during array resolution).
+  // Will be null when not an array.
+  //
+  int TIB_ARRAY_ELEMENT_TIB_INDEX = TIB_DOES_IMPLEMENT_INDEX + 1;
+
+  // A pointer to either an ITable or InterfaceMethodTable (IMT)
+  // depending on which dispatch implementation we are using.
+  int TIB_INTERFACE_DISPATCH_TABLE_INDEX = TIB_ARRAY_ELEMENT_TIB_INDEX + 1;
+
+  // A set of 0 or more specialized methods used in the VM such as for GC scanning
+  int TIB_FIRST_SPECIALIZED_METHOD_INDEX = TIB_INTERFACE_DISPATCH_TABLE_INDEX + 1;
+
+  // Next group of slots point to virtual method code blocks
+  // (slots V1..VN in above diagram).
+  int TIB_FIRST_VIRTUAL_METHOD_INDEX = TIB_FIRST_SPECIALIZED_METHOD_INDEX + SpecializedMethodManager.numSpecializedMethods();
+
+  /**
+   * Special value returned by RVMClassLoader.getFieldOffset() or
+   * RVMClassLoader.getMethodOffset() to indicate fields or methods
+   * that must be accessed via dynamic linking code because their
+   * offset is not yet known or the class's static initializer has not
+   * yet been run.
+   *
+   *  We choose a value that will never match a valid jtoc-,
+   *  instance-, or virtual method table- offset. Short.MIN_VALUE+1 is
+   *  a good value:
+   *
+   *  <ul>
+   *  <li>the jtoc offsets are aligned and this value should be
+   *  too huge to address the table</li>
+   *  <li>instance field offsets are always &gte; -4</li>
+   *  <li>virtual method offsets are always positive w.r.t. TIB pointer</li>
+   *  <li>fits into a PowerPC 16bit immediate operand</li>
+   *   </ul>
+   */
+  int NEEDS_DYNAMIC_LINK = Short.MIN_VALUE + 1;
+}
+
+
