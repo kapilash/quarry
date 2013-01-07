@@ -53,8 +53,8 @@ the first 4096 bytes will be considered. The rest will be ignored.
 
 * The return value from a quarry_read should not be deleted. More over, it is
 intended to be copied immediately and freed (using quarry_freeSlab) before the
-next call to quarry_read. 
-
+next call to quarry_read. (The ideal use of this value is to copy the contents into a GC'ed 
+memory and releasing the slab).
 
 ## TODO
 * add tests for UTF-8 identifiers
