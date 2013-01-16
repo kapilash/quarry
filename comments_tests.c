@@ -55,6 +55,7 @@ START_TEST (test_In0Ret0Test)
   fail_unless((quarry->col == 12),"Expected to be on 12th column"); 
   fail_unless((quarry->input.index == 92),"Expected to have index of 92");
   fail_unless((quarry->holder.length == 88),"Comment size does not match");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -77,6 +78,7 @@ START_TEST(test_In0Ret0TestLast)
   fail_unless((quarry->line == 1),"expected 1");
   fail_unless((quarry->input.index == 5),"expected index of 5");
   fail_unless((quarry->slabType == quarry_Comment),"expected comment");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -101,6 +103,7 @@ START_TEST(test_In0Ret0Test1)
   fail_unless((quarry->line == 1),"expected 1");
   fail_unless((quarry->input.index == 5),"expected index of 5");
   fail_unless((quarry->slabType == quarry_Comment),"expected comment");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -147,6 +150,7 @@ START_TEST (test_In0Ret0MaxSlabLenTest)
   fail_unless((quarry->col == 12),"Expected to be on 12th column"); 
   fail_unless((quarry->input.index == 92),"Expected to have index of 92");
   fail_unless((quarry->holder.length == 20),"Comment size does not match");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -179,6 +183,7 @@ START_TEST (test_In0Ret3LastCharStar)
   fail_unless((quarry->input.index > 99),"Expected to have index of 100");
   fail_unless((quarry->holder.length == 98),"Comment size does not match");
   fail_unless((retval == 3),"Expect a return value of 3");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -218,7 +223,8 @@ START_TEST (test_In3Ret0Immediate)
   fail_unless((quarry->holder.data[0] == 'a'),"comment data does not match at 0");
   fail_unless((quarry->holder.data[1] == 'b'),"comment data does not match at 1");
   fail_unless((quarry->holder.data[2] == 'c'),"comment data does not match at 2");
-  fail_unless((quarry->slabType),"expected a comment slab");
+  fail_unless((quarry->slabType == quarry_Comment),"expected a comment slab");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -259,7 +265,8 @@ START_TEST (test_In3Ret0Late)
   fail_unless((quarry->holder.data[1] == 'b'),"comment data does not match at 1");
   fail_unless((quarry->holder.data[2] == 'c'),"comment data does not match at 2");
   fail_unless((quarry->holder.data[3] == '*'),"comment data does not match at 3");
-  fail_unless((quarry->slabType),"expected a comment slab");
+  fail_unless((quarry->slabType == quarry_Comment),"expected a comment slab");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -293,6 +300,7 @@ START_TEST (test_In0Ret2LastCharSlash)
   fail_unless((quarry->input.index > 99),"Expected to have index of 100");
   fail_unless((quarry->holder.length == 98),"Comment size does not match");
   fail_unless((retval == 2),"Expect a return value of 2");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -326,6 +334,7 @@ START_TEST (test_In2Ret0FirstCharSlash)
   fail_unless((quarry->input.index > 99),"Expected to have index of 100");
   fail_unless((quarry->holder.length == 98),"Comment size does not match");
   fail_unless((retval == 0),"Expect a return value of 0");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -353,6 +362,7 @@ START_TEST(test_EmptyCommentIn0)
   fail_unless((quarry->input.index == 4),"Expected to have index of 4");
   fail_unless((quarry->holder.length == 0),"Comment size does not match");
   fail_unless((retval == 0),"Expect a return value of 0");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -379,6 +389,7 @@ START_TEST(test_EmptyCommentIn1)
   fail_unless((quarry->input.index == 3),"Expected to have index of 3");
   fail_unless((quarry->holder.length == 0),"Comment size does not match");
   fail_unless((retval == 0),"Expect a return value of 0");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -405,6 +416,7 @@ START_TEST(test_EmptyCommentIn2)
   fail_unless((quarry->input.index == 2),"Expected to have index of 2");
   fail_unless((quarry->holder.length == 0),"Comment size does not match");
   fail_unless((retval == 0),"Expect a return value of 0");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -431,6 +443,7 @@ START_TEST(test_EmptyCommentIn3)
   fail_unless((quarry->slabType == quarry_Comment),"Expected comment");
   fail_unless((quarry->input.index == 1),"Expected to have index of 1");
   fail_unless((retval == 0),"Expect a return value of 0");
+  fail_unless((quarry->holder.md == 0), "expected block comments");
 }
 END_TEST
 
@@ -459,6 +472,7 @@ START_TEST(test_SingleLineComment)
   fail_unless((quarry->slabType == quarry_Comment),"Expected comment");
   fail_unless((quarry->holder.length == 89), "Comment size mismatch");
   fail_unless((quarry->input.index == 92), "Expected input.index is 92");
+  fail_unless((quarry->holder.md == 1), "expected line comments");
 }
 END_TEST
 
@@ -485,7 +499,7 @@ START_TEST(test_LineCommentSize2)
   fail_unless((quarry->slabType == quarry_Comment),"Expected comment");
   fail_unless((quarry->holder.length == 2),"Expected size is 2");
   fail_unless((quarry->input.index == 2),"Expected input.index is 2");
-
+  fail_unless((quarry->holder.md == 1), "expected line comments");
 }
 END_TEST
 
@@ -506,14 +520,14 @@ START_TEST(test_LineCommentNLFirst)
   quarry = quarry_makeQuarry(input,size);
   Quarry_AppendNext(quarry,'a');
   Quarry_AppendNext(quarry,'b');
-  
+  quarry->holder.md= 1;
   retval = quarry_commentLexer(quarry,4);
   //  quarry_printQuarry(quarry);
   fail_unless((quarry->line == expLine),"Line # mismatch");
   fail_unless((quarry->slabType == quarry_Comment),"Expected comment");
   fail_unless((quarry->holder.length == 2),"Expected size is 2");
   fail_unless((quarry->input.index == 1),"Expected input.index is 2");
-
+  fail_unless((quarry->holder.md == 1), "expected line comments");
 }
 END_TEST
 START_TEST(test_EmptyLineComment)
@@ -542,7 +556,7 @@ START_TEST(test_EmptyLineComment)
   fail_unless((quarry->slabType == quarry_Comment),"Expected comment");
   fail_unless((quarry->holder.length == 0),"Expected size is 0");
   fail_unless((quarry->input.index == 3),"Expected input.index is 3");
-
+  fail_unless((quarry->holder.md == 1), "expected line comments");
 }
 END_TEST
 

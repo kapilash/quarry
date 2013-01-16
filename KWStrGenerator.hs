@@ -89,17 +89,18 @@ sizeDeclAndInitArrs (KWIndices lst grpCount conclen) = [
   "    }"
  ]
 
-kwIndexToCode :: KWIndex -> [String]
-kwIndexToCode (KWIndex ac ci li num) = [
+kwIndexToCode :: (KWIndex,Int) -> [String]
+kwIndexToCode (KWIndex ac ci li num,idnt) = [
               "    kwStrArr["++(show ac)++"].word = &(concatenated["++(show ci)++"]);",
               "    kwStrArr["++(show ac)++"].indices  = &(lengths["++(show li)++"]);",
               "    kwStrArr["++(show ac)++"].wordCount =  "++(show num)++";",
+              "    kwStrArr["++(show ac)++"].beginKWId =  "++(show idnt)++";",
               "",
               ""
               ]
 
 kwIndicesToCode :: KWIndices -> [String]
-kwIndicesToCode (KWIndices lst _ _ ) = Lst.concatMap kwIndexToCode lst 
+kwIndicesToCode (KWIndices lst _ _ ) = Lst.concatMap kwIndexToCode $ zip lst [0,1..] 
 
 fillConcArr :: [String] -> [String]
 fillConcArr strs = map fillConc (zip [0,1..] (Lst.concat strs)) where

@@ -90,7 +90,7 @@ int quarry_errLexer(quarry_QuarryPtr quarry, int lexerState){
 }
 
 int quarry_idLexer(quarry_QuarryPtr quarry, int lexerState){
-  unsigned char nextChar;
+  unsigned char nextChar;int kwIndex = -1;
   Quarry_ReadNext(quarry,nextChar);
   if(lexerState != 0){
     if(!IS_IDENTIFIER_CHAR(nextChar))
@@ -108,8 +108,10 @@ int quarry_idLexer(quarry_QuarryPtr quarry, int lexerState){
 
  RETURN_ID_SLABTYPE:
   Quarry_UnRead(quarry);
-  if(quarry_util_isKeyword(quarry->kwTable,quarry->holder.data,quarry->holder.length)){
+  kwIndex = quarry_util_isKeyword(quarry->kwTable,quarry->holder.data,quarry->holder.length);
+  if(kwIndex){
     quarry->slabType = quarry_Keyword;
+    quarry->holder.md = kwIndex;
   }else{
     quarry->slabType = quarry_Identifier;
   }

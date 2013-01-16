@@ -68,6 +68,7 @@ int quarry_commentLexer(quarry_QuarryPtr quarry, int lexerState){
     exit(1);
   }
  THIRD_CHAR:
+  quarry->holder.md = 0;
   quarry->holder.length = 0;
   if(Quarry_HasMore(quarry)){
     Quarry_ReadNext(quarry,nextChar);
@@ -113,6 +114,7 @@ int quarry_commentLexer(quarry_QuarryPtr quarry, int lexerState){
   Quarry_AppendSingleChar(quarry,47)
   return 0;
  LINE_COMMENT:
+  quarry->holder.md = 1;
   while Quarry_HasMore(quarry){
     Quarry_ReadNext(quarry,nextChar)
     if(nextChar == '\n'){

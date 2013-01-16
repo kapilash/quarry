@@ -191,6 +191,7 @@ quarry_SlabPtr quarry_read(quarry_Reader reader){
   }  
 
  RETSLAB:
+  slabPtr->slabMD = qreader->quarry->holder.md;
   slabPtr->data = qreader->quarry->holder.data;
   slabPtr->slabLength  = qreader->quarry->holder.length;
   slabPtr->line = qreader->quarry->line;

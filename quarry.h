@@ -37,6 +37,7 @@ struct quarry_Slab_
   int slabLength;
   enum quarry_SlabType slabType;
   unsigned char *data;
+  int slabMD;
 };
 
 typedef struct quarry_Slab_ quarry_Slab;

@@ -24,6 +24,7 @@ quarry_QuarryPtr quarry_makeQuarry(unsigned char *buffer, int bufferSize){
   quarry->slabType = quarry_Error;
   quarry->holder.data = (unsigned char *)malloc(4096*sizeof(unsigned char));
   quarry->holder.length = 0;
+  quarry->holder.md = 0;
   quarry->kwTable = NULL;
   return quarry;
 }
@@ -49,6 +50,7 @@ void quarry_printQuarry(quarry_QuarryPtr quarry){
   }
   printf(";\n");
   printf("\tholder.length=%d\n",quarry->holder.length);
+  printf("\tholder.md=%d\n",quarry->holder.md);
   printf("\n\tslab data = ");
   for(index = 0;index < quarry->holder.length;index++){
     printf("%c",quarry->holder.data[index]);

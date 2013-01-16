@@ -31,6 +31,7 @@ typedef struct quarry_Input_ *quarry_InputPtr;
 struct quarry_SlabData_{
   size_t length;
   unsigned char latest;
+  int md;
   unsigned char *data;
 };
 

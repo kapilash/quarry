@@ -17,6 +17,7 @@ struct quarry_util_KWsPerLetter_{
   const char *word;
   int wordCount;
   int *indices;
+  int beginKWId;
 };
 
 
