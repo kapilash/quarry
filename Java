@@ -19,8 +19,8 @@ final
 finally
 float
 for
-if
 goto
+if
 implements
 import
 instanceof

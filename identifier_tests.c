@@ -61,7 +61,7 @@ START_TEST(test_identifierKW)
   quarry_QuarryPtr quarry;
   size = 20;
 
-  printf("\nRunning tests on identifier.");
+  printf("\nRunning keyword tests on identifier.");
   input = (unsigned char *)malloc(size*sizeof(unsigned char));
   for(index = 0;index<size;index++){
     input[index] = ' ';

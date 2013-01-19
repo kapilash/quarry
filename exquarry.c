@@ -22,6 +22,7 @@ void printSlab(quarry_SlabPtr slab){
   printf("line = %d;",slab->line);
   printf("col = %d;",slab->col);
   printf("length = %d;",slab->slabLength);
+  printf("slabMD = %lx;",slab->slabMD);
   printf("content = {");
   for(index = 0;index < slab->slabLength;index++){
     if(slab->data[index] != '\n')
@@ -64,7 +65,7 @@ int main(int argc, char **argv){
   while(1){
     slab = quarry_read(reader);
     l++;
-    //printSlab(slab);
+    //  printSlab(slab);
     if(slab->slabType == quarry_Comment)
       comments++;
     if(slab->slabType == quarry_EOF)

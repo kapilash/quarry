@@ -107,6 +107,40 @@ int quarry_util_isKeyword(qu_KWTablePtr kwtable, unsigned char *identifier, int 
   }
   return 0;
 }
+int quarry_util_keywordIndex(qu_KWTablePtr kwtable, unsigned char *identifier, int len){
+  qu_KWspl keywordsPerLetter;
+  int index,curr,kwlen,max,j,k,isMatch,kwId;
+  kwId = -1;
+  if(kwtable == NULL)
+    return kwId;
+  if(len < 1)
+    return kwId;
+
+  keywordsPerLetter = kwtable->kwIndices[identifier[0]];
+  
+  kwId = keywordsPerLetter.beginKWId;
+  curr = 0;max = 0;
+  for(index =0;index<(keywordsPerLetter.wordCount);index++){
+    kwlen = keywordsPerLetter.indices[index];
+    max += kwlen;
+    if(len == kwlen){
+      isMatch = 1;
+
+      k = 0;
+      for(j=curr;j<max;j++){
+	if(identifier[k] != keywordsPerLetter.word[j]){
+	  isMatch = 0; break;
+	}
+	k++;
+      }
+      if(isMatch){
+	return kwId + index;
+      }
+    }
+    curr = max;
+  }
+  return (-1);
+}
 
 void quarry_util_freeKeywordTable(qu_KWTablePtr kwtable){
   if(kwtable == NULL)

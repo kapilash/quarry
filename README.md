@@ -10,6 +10,7 @@ A slab is a structure with:
 * line number
 * column number
 * text 
+* some metadata (unsigned 64 bit number)
 
 Think slab as a crude token.
 
@@ -17,17 +18,21 @@ Think slab as a crude token.
 The following are the various types of slabs
 *  __Error__ 
 *  __Keyword__ currently c and java keywords are supported. Library is
-flexible enough to support a new set of keywords. Adding a new set is semi automated. 
-*  __Identifier__ a valid java identifier  (UTF-8) with a '$'
+flexible enough to support a new set of keywords. Adding a new set is semi
+automated. (metadata = index of the keyword when keywords are sorted in alphabetical order).
+*  __Identifier__ a valid java identifier  (UTF-8) with a '$'. (metadata for
+the slab is the hash code computed using FNV-1a algorithm).
 *  __String__  Anything between double quotes (but the second double quote
 should not be preceded by an unescaped backslash)
 *  __Char__ same as double String but with single quotes
-*  __Numbers__ decimals, binary, hexadecimal and octal numbers (following c rules)
+*  __Numbers__ decimals, binary, hexadecimal and octal numbers. The syntax follows c
+rules. (metadata = 0 ,1,2 and 3 for decimal,binary,hexadecimal and octals respectively).
 *  __Operator__  asterisk etc
 *  __Grouping__ brackets (square,circular,curly and angular)
 *  __Punctuation__ colon, semicolon, dot, comma, question mark, exclamation
 mark 
-*  __Comment__ java style block and single line comments. 
+*  __Comment__ java style block and single line comments. (metadata = 0 for
+block comments and 1 for line comments)
 *  __Whitespace__ a space or a tab character
 *  __NewLine__ LF or CRLF
 *  __EOF__ a token representing an end of file (this occurs after the last
@@ -59,4 +64,4 @@ memory and releasing the slab).
 ## TODO
 * add tests for UTF-8 identifiers
 * add comprehensive tests for c
-* support for haskell and ada style comments
+* Extend slab types to include the operators.

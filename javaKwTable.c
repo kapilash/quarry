@@ -13,6 +13,7 @@ qu_KWTablePtr quarry_util_keywordTableJava(){
 
     int keywordCount = 16;
     int concatenatedLength = 289;
+    int kwIndex = 0;
 
     kwTablePtr = (qu_KWTablePtr)malloc(sizeof(qu_KWTable));
     concatenated = (char *)malloc(289 * sizeof(unsigned char));
@@ -369,98 +370,86 @@ qu_KWTablePtr quarry_util_keywordTableJava(){
     kwStrArr[119].word = &(concatenated[284]);
     kwStrArr[119].indices  = &(lengths[49]);
     kwStrArr[119].wordCount =  1;
-    kwStrArr[119].beginKWId =  0;
 
 
     kwStrArr[118].word = &(concatenated[272]);
     kwStrArr[118].indices  = &(lengths[47]);
     kwStrArr[118].wordCount =  2;
-    kwStrArr[118].beginKWId =  1;
 
 
     kwStrArr[116].word = &(concatenated[245]);
     kwStrArr[116].indices  = &(lengths[42]);
     kwStrArr[116].wordCount =  5;
-    kwStrArr[116].beginKWId =  2;
 
 
     kwStrArr[115].word = &(concatenated[203]);
     kwStrArr[115].indices  = &(lengths[36]);
     kwStrArr[115].wordCount =  6;
-    kwStrArr[115].beginKWId =  3;
 
 
     kwStrArr[114].word = &(concatenated[197]);
     kwStrArr[114].indices  = &(lengths[35]);
     kwStrArr[114].wordCount =  1;
-    kwStrArr[114].beginKWId =  4;
 
 
     kwStrArr[112].word = &(concatenated[168]);
     kwStrArr[112].indices  = &(lengths[31]);
     kwStrArr[112].wordCount =  4;
-    kwStrArr[112].beginKWId =  5;
 
 
     kwStrArr[110].word = &(concatenated[159]);
     kwStrArr[110].indices  = &(lengths[29]);
     kwStrArr[110].wordCount =  2;
-    kwStrArr[110].beginKWId =  6;
 
 
     kwStrArr[108].word = &(concatenated[155]);
     kwStrArr[108].indices  = &(lengths[28]);
     kwStrArr[108].wordCount =  1;
-    kwStrArr[108].beginKWId =  7;
 
 
     kwStrArr[105].word = &(concatenated[115]);
     kwStrArr[105].indices  = &(lengths[22]);
     kwStrArr[105].wordCount =  6;
-    kwStrArr[105].beginKWId =  8;
 
 
     kwStrArr[103].word = &(concatenated[111]);
     kwStrArr[103].indices  = &(lengths[21]);
     kwStrArr[103].wordCount =  1;
-    kwStrArr[103].beginKWId =  9;
 
 
     kwStrArr[102].word = &(concatenated[91]);
     kwStrArr[102].indices  = &(lengths[17]);
     kwStrArr[102].wordCount =  4;
-    kwStrArr[102].beginKWId =  10;
 
 
     kwStrArr[101].word = &(concatenated[76]);
     kwStrArr[101].indices  = &(lengths[14]);
     kwStrArr[101].wordCount =  3;
-    kwStrArr[101].beginKWId =  11;
 
 
     kwStrArr[100].word = &(concatenated[61]);
     kwStrArr[100].indices  = &(lengths[11]);
     kwStrArr[100].wordCount =  3;
-    kwStrArr[100].beginKWId =  12;
 
 
     kwStrArr[99].word = &(concatenated[30]);
     kwStrArr[99].indices  = &(lengths[5]);
     kwStrArr[99].wordCount =  6;
-    kwStrArr[99].beginKWId =  13;
 
 
     kwStrArr[98].word = &(concatenated[14]);
     kwStrArr[98].indices  = &(lengths[2]);
     kwStrArr[98].wordCount =  3;
-    kwStrArr[98].beginKWId =  14;
 
 
     kwStrArr[97].word = &(concatenated[0]);
     kwStrArr[97].indices  = &(lengths[0]);
     kwStrArr[97].wordCount =  2;
-    kwStrArr[97].beginKWId =  15;
 
 
+    for(index = 0; index<128;index++){
+        kwStrArr[index].beginKWId = kwIndex;
+        kwIndex = kwIndex + kwStrArr[index].wordCount;
+    }
     return kwTablePtr;
 }

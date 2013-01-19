@@ -43,4 +43,6 @@ qu_KWTablePtr quarry_util_keywordTableC();
 void quarry_util_freeKeywordTable(qu_KWTablePtr kwtable);
 
 int quarry_util_isKeyword(qu_KWTablePtr kwtable, unsigned char *identifier, int len);
+
+int quarry_util_keywordIndex(qu_KWTablePtr kwtable, unsigned char *identifier, int len);
 #endif

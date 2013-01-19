@@ -16,17 +16,17 @@ import Data.Char(ord)
 import System.Environment(getArgs)
 
 
-posTestCode :: String -> IO ()
-posTestCode str = do 
+posTestCode :: (String,Int) -> IO ()
+posTestCode (str,i) = do 
     putStrLn $ "    currKWsize = strlen(\""++ str ++"\");"
     putStrLn $ "    memcpy(input,\""++ str ++ "\",currKWsize);"
-    putStrLn $ "    retval = quarry_util_isKeyword(kwTable, input, currKWsize );"
-    putStrLn $ "    fail_unless((retval == 1),\"" ++ str ++ " is a keyword\");"
+    putStrLn $ "    retval = quarry_util_keywordIndex(kwTable, input, currKWsize );"
+    putStrLn $ "    fail_unless((retval == " ++ (show i) ++"),\"" ++ str ++ " is a keyword\");"
  
 
 genTestCode :: FilePath -> IO ()
 genTestCode f = do rf <- readFile f
-                   mapM_ posTestCode (lines rf)
+                   mapM_ posTestCode (zip (lines rf) [0,1..])
   
 main = do args <- getArgs
           case args of

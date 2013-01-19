@@ -15,6 +15,7 @@ KWNegativeTests
 KWPositiveTests
 KWStrGenerator
 *~
+*.key
 
 # Executables
 *.exe

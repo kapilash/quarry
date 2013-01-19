@@ -37,7 +37,7 @@ START_TEST(test_DecimalsWithUnderscore)
   fail_unless((quarry->holder.length == 4),"Expected size is 4");
   fail_unless((quarry->holder.data[2] == '_'),"Expected _ at 3");
   fail_unless((quarry->input.index == 4),"Expected input.index is 4");
-
+  fail_unless((quarry->holder.md == 0),"Expected metadata = 0");
 }
 END_TEST
 
@@ -64,6 +64,7 @@ START_TEST(test_DecimalsEndBlock)
   fail_unless((quarry->holder.length == 5),"Expected size is 5");
   fail_unless((quarry->holder.data[4] == '_'),"Expected _ at 4");
   fail_unless((quarry->input.index == 5),"Expected input.index is 5");
+ fail_unless((quarry->holder.md == 0),"Expected metadata = 0");
 
 }
 END_TEST
@@ -92,6 +93,7 @@ START_TEST(test_DecimalEndWithL)
   fail_unless((quarry->holder.length == 5),"Expected size is 5");
   fail_unless((quarry->holder.data[2] == '_'),"Expected _ at 3");
   fail_unless((quarry->input.index == 5),"Expected input.index is 5");
+  fail_unless((quarry->holder.md == 0),"Expected metadata = 0");
 }
 END_TEST
 
@@ -118,6 +120,7 @@ START_TEST(test_DecimalEndWithl)
   fail_unless((quarry->holder.length == 5),"Expected size is 5");
   fail_unless((quarry->holder.data[2] == '_'),"Expected _ at 3");
   fail_unless((quarry->input.index == 5),"Expected input.index is 5");
+  fail_unless((quarry->holder.md == 0),"Expected metadata = 0");
 }
 END_TEST
 
@@ -156,6 +159,7 @@ START_TEST(test_BinaryTest)
   fail_unless((quarry->holder.length == 8),"Expected size is 8");
   fail_unless((quarry->holder.data[7] == 'L'),"Expected L at 7");
   fail_unless((quarry->input.index == 2),"Expected input.index is 2");
+  fail_unless((quarry->holder.md == 1),"Expected metadata = 1");
 }
 END_TEST
 
@@ -197,6 +201,7 @@ START_TEST(test_Octal)
   fail_unless((quarry->holder.length == 9),"Expected size is 9");
   fail_unless((quarry->holder.data[8] == '_'),"Expected L at 7");
   fail_unless((quarry->input.index == 3),"Expected input.index is 3");
+  fail_unless((quarry->holder.md == 2),"Expected metadata = 2");
 }
 END_TEST
 
@@ -248,6 +253,8 @@ START_TEST(test_Hexal)
   fail_unless((quarry->holder.length == 25),"Expected size is 25");
   fail_unless((quarry->holder.data[18] == '_'),"Expected _ at 18");
   fail_unless((quarry->input.index == 7),"Expected input.index is 7");
+  fail_unless((quarry->holder.md == 3),"Expected metadata = 3");
+  
 }
 END_TEST
 
@@ -299,6 +306,8 @@ START_TEST(test_HexalWithL)
   fail_unless((quarry->holder.data[18] == '_'),"Expected _ at 18");
   fail_unless((quarry->holder.data[25] == 'l'),"Expected _ at 25");
   fail_unless((quarry->input.index == 8),"Expected input.index is 8");
+  fail_unless((quarry->holder.md == 3),"Expected metadata = 3");
+
 }
 END_TEST
 void quarry_addNumbersTests(Suite *suite)

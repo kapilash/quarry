@@ -73,6 +73,7 @@ sizeDeclAndInitArrs :: KWIndices -> [String]
 sizeDeclAndInitArrs (KWIndices lst grpCount conclen) = [
   "    int keywordCount = " ++ (show $ length lst) ++";",
   "    int concatenatedLength = " ++ (show conclen) ++ ";",
+  "    int kwIndex = 0;",
   "", 
   "    kwTablePtr = (qu_KWTablePtr)malloc(sizeof(qu_KWTable));",
   "    concatenated = (char *)malloc("++(show conclen)++" * sizeof(unsigned char));",
@@ -89,18 +90,17 @@ sizeDeclAndInitArrs (KWIndices lst grpCount conclen) = [
   "    }"
  ]
 
-kwIndexToCode :: (KWIndex,Int) -> [String]
-kwIndexToCode (KWIndex ac ci li num,idnt) = [
+kwIndexToCode :: KWIndex -> [String]
+kwIndexToCode (KWIndex ac ci li num) = [
               "    kwStrArr["++(show ac)++"].word = &(concatenated["++(show ci)++"]);",
               "    kwStrArr["++(show ac)++"].indices  = &(lengths["++(show li)++"]);",
               "    kwStrArr["++(show ac)++"].wordCount =  "++(show num)++";",
-              "    kwStrArr["++(show ac)++"].beginKWId =  "++(show idnt)++";",
               "",
               ""
               ]
 
 kwIndicesToCode :: KWIndices -> [String]
-kwIndicesToCode (KWIndices lst _ _ ) = Lst.concatMap kwIndexToCode $ zip lst [0,1..] 
+kwIndicesToCode (KWIndices lst _ _ ) = Lst.concatMap kwIndexToCode lst 
 
 fillConcArr :: [String] -> [String]
 fillConcArr strs = map fillConc (zip [0,1..] (Lst.concat strs)) where
@@ -114,7 +114,13 @@ fillLengths strs = map fillLen (zip [0,1..] (map length strs))
 
 
 ending :: [String]
-ending = ["    return kwTablePtr;","}"]
+ending = [
+  "    for(index = 0; index<128;index++){",     
+  "        kwStrArr[index].beginKWId = kwIndex;",
+  "        kwIndex = kwIndex + kwStrArr[index].wordCount;",
+  "    }",
+  "    return kwTablePtr;",
+  "}"]
 
 testCKW = ["abstract","assert","boolean","break","byte","case","catch","char","class","const","continue",
           "default","do"]
@@ -140,6 +146,9 @@ genCode :: FilePath -> IO ()
 genCode f = do rf <- readFile f
                putStrLn "/* generating code */"
                printBlock $ kwToBlocks f (lines rf)
+               genKeyFile f (lines rf)
+
+genKeyFile f strs = writeFile (f ++ ".key") (unlines $ map show $ zip [0,1..] (Lst.sort strs))
 
 main = do args <- getArgs
           case args of
