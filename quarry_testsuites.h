@@ -26,4 +26,6 @@ void quarry_addKeywordTests(Suite *suite);
 void quarry_addIdentifierTests(Suite *suite);
 
 void quarry_addReaderTests(Suite *suite);
+
+void quarry_addMetaIdTests(Suite *suite);
 #endif

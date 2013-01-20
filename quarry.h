@@ -26,6 +26,7 @@ enum quarry_SlabType{
   quarry_Comment,
   quarry_Whitespace,
   quarry_NewLine,
+  quarry_MetaId,
   quarry_EOF
 };
 
@@ -37,7 +38,7 @@ struct quarry_Slab_
   int slabLength;
   enum quarry_SlabType slabType;
   unsigned char *data;
-  u_int64_t slabMD;
+  u_int32_t slabMD;
 };
 
 typedef struct quarry_Slab_ quarry_Slab;

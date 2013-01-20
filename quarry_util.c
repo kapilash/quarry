@@ -69,6 +69,7 @@ void quarry_printQuarry(quarry_QuarryPtr quarry){
   case   quarry_Comment:    {printf("COMMENT");break;}
   case   quarry_Whitespace: {printf("WHITESPACE");break;}
   case   quarry_NewLine:    {printf("NEWLINE");break;}
+  case quarry_MetaId:       {printf("META");break;}
   case quarry_EOF:          {printf("EOF");break;}
   default: printf("UNKNOWN");
   }

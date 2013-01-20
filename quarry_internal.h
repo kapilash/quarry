@@ -31,7 +31,7 @@ typedef struct quarry_Input_ *quarry_InputPtr;
 struct quarry_SlabData_{
   size_t length;
   unsigned char latest;
-  u_int64_t md;
+  u_int32_t md;
   unsigned char *data;
 };
 
@@ -48,6 +48,7 @@ struct quarry_Quarry_
   enum quarry_SlabType slabType;
   quarry_SlabData holder;
   qu_KWTablePtr kwTable;
+  qu_KWTablePtr operTable;
 };
 
 typedef struct quarry_Quarry_ quarry_Quarry;

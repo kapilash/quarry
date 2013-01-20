@@ -10,7 +10,7 @@ A slab is a structure with:
 * line number
 * column number
 * text 
-* some metadata (unsigned 64 bit number)
+* some metadata (unsigned 32 bit number)
 
 Think slab as a crude token.
 
@@ -37,7 +37,9 @@ block comments and 1 for line comments)
 *  __NewLine__ LF or CRLF
 *  __EOF__ a token representing an end of file (this occurs after the last
 line)
-
+* __MetaId__ In case of C, variables beginning with '#' are interpreted as
+meta identifiers. In case of Java, variables beginning with '@' are read as
+meta Ids. By default there are no meta identifiers.
 ## Example
 please consult exquarry.c
 
@@ -64,4 +66,6 @@ memory and releasing the slab).
 ## TODO
 * add tests for UTF-8 identifiers
 * add comprehensive tests for c
-* Extend slab types to include the operators.
+* add comprehensive tests for  operators
+* add support numbers ending with LL and ULL
+

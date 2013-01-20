@@ -18,13 +18,37 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
  *Using FNV1-a hash from http://www.isthe.com/chongo/tech/comp/fnv
  *Copied the code from the same as is, as it was described to be a public domain work
  */
+
+/* If we are interested in 64 bit hash, use the following.
 #define FNV1_64_INIT ((u_int64_t)0xcbf29ce484222325ULL)
 #define FNV1A_64_INIT FNV1_64_INIT
 #define FNV_64_PRIME ((u_int64_t)0x100000001b3ULL)
+*/
+#define FNV_32_PRIME ((u_int32_t)0x01000193)
+#define FNV1_32_INIT ((u_int32_t)0x811c9dc5)
+#define FNV1A_32_INIT FNV1_32_INIT
 
 #define IS_IDENTIFIER_CHAR(x) (((x>='A')&&(x<='Z')) || ((x>='a')&&(x<='z')) || ((x>='0')&&(x<='9')) || (x=='_')|| (x=='$') || (x>127))
 
 
+static int isOperator(unsigned char c, unsigned char *opers, int length){
+  int index = 0;int middle;
+  int lower = 0; int upper = length-1;
+  if(c < opers[lower])
+    return 0;
+  if(c > opers[upper])
+    return 0;
+  while(lower < upper){
+    middle = (lower + upper)/2 ;
+    if(c < opers[middle]){
+      upper = middle-1;
+    }else if(c == opers[middle])
+      return 1;
+    else
+      lower = middle+1;
+  }
+  return 0;
+}
 
 
 int quarry_punctuation(quarry_QuarryPtr quarry, int lexerState){
@@ -37,10 +61,32 @@ int quarry_punctuation(quarry_QuarryPtr quarry, int lexerState){
 
 int quarry_operatorLexer(quarry_QuarryPtr quarry, int lexerState){
   unsigned char nextChar;
+  unsigned char operChars[] = {33,37,38,42,43,45,47,58,60,61,62,63,94,124,126};
+
+  Quarry_ReadNext(quarry,nextChar);
+  if(lexerState != 0){
+    if(!isOperator(nextChar,operChars,15))
+      goto RETURN;
+  }
+
+  Quarry_AppendNext(quarry,nextChar);
+  while (Quarry_HasMore(quarry)){
+    Quarry_ReadNext(quarry,nextChar);
+    if(!isOperator(nextChar,operChars,nextChar))
+      goto RETURN;  
+    Quarry_AppendNext(quarry,nextChar);
+  }
+  quarry->slabType = quarry_Error;
+  quarry->holder.md = -1;
+  return 1;
+
+ RETURN:
+  Quarry_UnRead(quarry);
   quarry->slabType = quarry_Operator;
-  Quarry_ReadNext(quarry,nextChar)
-  Quarry_AppendSingleChar(quarry,nextChar)
+  quarry->holder.md =  quarry_util_keywordIndex(quarry->operTable,quarry->holder.data,quarry->holder.length);
+
   return 0;
+
 }
 
 int quarry_groupLexer(quarry_QuarryPtr quarry, int lexerState){
@@ -102,7 +148,7 @@ int quarry_errLexer(quarry_QuarryPtr quarry, int lexerState){
 
 int quarry_idLexer(quarry_QuarryPtr quarry, int lexerState){
   unsigned char nextChar;int kwIndex = -1;
-  u_int64_t hval = 0L;
+  u_int32_t hval = 0;
 
   Quarry_ReadNext(quarry,nextChar);
   if(lexerState != 0){
@@ -110,18 +156,18 @@ int quarry_idLexer(quarry_QuarryPtr quarry, int lexerState){
     if(!IS_IDENTIFIER_CHAR(nextChar))
       goto RETURN_ID_SLABTYPE;
   }else{
-    quarry->holder.md = FNV1A_64_INIT ; 
+    quarry->holder.md = FNV1A_32_INIT ; 
   }
-  hval ^= (u_int64_t)nextChar;
-  hval *= FNV_64_PRIME;
+  hval ^= (u_int32_t)nextChar;
+  hval *= FNV_32_PRIME;
   Quarry_AppendNext(quarry,nextChar);
   while (Quarry_HasMore(quarry)){
     Quarry_ReadNext(quarry,nextChar);
     if(!IS_IDENTIFIER_CHAR(nextChar))
       goto RETURN_ID_SLABTYPE;  
     Quarry_AppendNext(quarry,nextChar);
-    hval ^= (u_int64_t)nextChar;
-    hval *= FNV_64_PRIME;
+    hval ^= (u_int32_t)nextChar;
+    hval *= FNV_32_PRIME;
   }
   quarry->slabType = quarry_Error;
   quarry->holder.md = hval;
@@ -190,7 +236,7 @@ int quarry_sqLexer(quarry_QuarryPtr quarry, int lexerState){
   return genQLexer('\'',quarry_Char,quarry,lexerState);
 }
 
-int digitLexer(int (*f)(unsigned char c), quarry_QuarryPtr quarry, int lexerState){
+static int digitLexer(int (*f)(unsigned char c), quarry_QuarryPtr quarry, int lexerState){
   unsigned char nextChar;
 
   if(lexerState == 0){
@@ -228,7 +274,7 @@ int quarry_isHexadecimal(unsigned char c){
   return ((c < 58) && (c > 47)) || (c == 95) || ((c < 71) && (c > 64)) || ((c < 103) && (c >96));
 }
 
-int numberLexer(int (*f)(unsigned char),quarry_QuarryPtr quarry, int lexerState){
+static int numberLexer(int (*f)(unsigned char),quarry_QuarryPtr quarry, int lexerState){
   unsigned char nextChar;
   int ret = 0;
   ret = digitLexer(f,quarry,lexerState);
@@ -241,6 +287,30 @@ int numberLexer(int (*f)(unsigned char),quarry_QuarryPtr quarry, int lexerState)
     Quarry_AppendNext(quarry,nextChar);
   }
   return 0;
+}
+
+int quarry_metaIdLexer(quarry_QuarryPtr quarry, int lexerState){
+  unsigned char nextChar;int ret = 0;
+
+  if(lexerState < 10){
+    if(lexerState == 0){
+      Quarry_ReadNext(quarry,nextChar);
+      Quarry_AppendNext(quarry,nextChar);
+    }
+    if(!Quarry_HasMore(quarry)){
+      return 1;
+    }
+    nextChar = Quarry_PeekNextInputChar(quarry);
+    if(((nextChar >= 'A') && (nextChar <= 'Z')) || ((nextChar >='a') && (nextChar <= 'z')) || (nextChar == '_')){
+    }else{
+      quarry->slabType = quarry_MetaId;
+      quarry->holder.md = -1;
+      return 0;
+    }
+  }
+  ret = quarry_idLexer(quarry,lexerState > 0 ? lexerState - 10: 0);
+  quarry->slabType = quarry_MetaId;
+  return (ret == 0)? 0 : (10 + ret);
 }
 
 int quarry_decimalLexer(quarry_QuarryPtr quarry, int lexerState){

@@ -32,6 +32,29 @@ static int fillQuarryInput(QReaderPtr reader,quarry_SlabPtr slab){
   return 0;
 }
 
+static void addCLexers(QReaderPtr reader){
+  reader->lexers['#'] = &quarry_metaIdLexer;
+  reader->lexers['?'] = &quarry_operatorLexer;
+  reader->lexers['>'] = &quarry_operatorLexer;
+  reader->lexers['<'] = &quarry_operatorLexer;
+  reader->lexers[':'] = &quarry_operatorLexer;
+  reader->lexers['!'] = &quarry_operatorLexer;
+  reader->quarry->kwTable= quarry_util_keywordTableC();
+  reader->quarry->operTable = quarry_util_keywordTableCOperators();
+}
+
+static void addJavaLexers(QReaderPtr reader){
+  reader->lexers['@'] = &quarry_metaIdLexer;
+  reader->lexers['?'] = &quarry_operatorLexer;
+  reader->lexers['>'] = &quarry_operatorLexer;
+  reader->lexers['<'] = &quarry_operatorLexer;
+  reader->lexers[':'] = &quarry_operatorLexer;
+  reader->lexers['!'] = &quarry_operatorLexer;
+  
+  reader->quarry->kwTable = quarry_util_keywordTableJava();
+  reader->quarry->operTable = quarry_util_keywordTableJavaOpers();
+}
+
 quarry_Reader quarry_newReader(const char *fileName, quarry_PL pl){
   QReaderPtr reader;
   quarry_Lexer *lexers;
@@ -135,15 +158,16 @@ quarry_Reader quarry_newReader(const char *fileName, quarry_PL pl){
 
   switch(pl){
   case quarry_C :{
-    reader->quarry->kwTable= quarry_util_keywordTableC();
+    addCLexers(reader);
     break;
   }
   case quarry_Java:{
-    reader->quarry->kwTable = quarry_util_keywordTableJava();
+    addJavaLexers(reader);
     break;
   }
   default:
     reader->quarry->kwTable = NULL;
+    reader->quarry->operTable = NULL;
   }
   return reader;
 }

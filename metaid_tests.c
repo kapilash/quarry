@@ -14,18 +14,18 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include "quarry_internal.h"
 
 
-START_TEST(test_identifier1)
+START_TEST(test_metaid)
 {
   unsigned char *input;
   int size,index,retval,expLine;
   quarry_QuarryPtr quarry;
   size = 17;
 
-  printf("\nRunning tests on identifier.");
+  printf("\nRunning tests on meta id.");
   input = (unsigned char *)malloc(size*sizeof(unsigned char));
   input[0] = 'x';
   for(index = 1;index<10;index++){
-    input[index] = 47+index;
+    input[index] = 64+index;
   }
   input[10]='A';
   input[11] = 'a';
@@ -38,23 +38,23 @@ START_TEST(test_identifier1)
   quarry = quarry_makeQuarry(input,size);
   quarry->input.index = 0;
 
-  retval = quarry_idLexer(quarry,0);
+  retval = quarry_metaIdLexer(quarry,0);
   //quarry_printQuarry(quarry);
   fail_unless((retval != 0),"expected non-zero");
   printf(".");
   quarry->input.index = 0;
   quarry->input.data[3]=';';
-  retval = quarry_idLexer(quarry,retval);
+  retval = quarry_metaIdLexer(quarry,retval);
   //quarry_printQuarry(quarry);
   fail_unless((retval == 0),"expected zero");
-  fail_unless((quarry->slabType == quarry_Identifier),"Expected identifier");
+  fail_unless((quarry->slabType == quarry_MetaId),"Expected meta-identifier");
   fail_unless((quarry->holder.length == 20),"Expected size is 20");
   fail_unless((quarry->input.index == 3),"Expected input.index is 3");
   free(input);
 }
 END_TEST
 
-START_TEST(test_identifierKW)
+START_TEST(test_metaidKW)
 {
   unsigned char *input;
   int size,index,retval,expLine,currKWsize;
@@ -72,20 +72,20 @@ START_TEST(test_identifierKW)
   quarry->input.index = 0;
   quarry->kwTable = quarry_util_keywordTableJava();
 
-  retval = quarry_idLexer(quarry,0);
-  //  quarry_printQuarry(quarry);
+  retval = quarry_metaIdLexer(quarry,0);
+  //quarry_printQuarry(quarry);
   fail_unless((retval == 0),"expected zero");
-  fail_unless((quarry->slabType == quarry_Keyword),"Expected keyword");
+  fail_unless((quarry->slabType == quarry_MetaId),"Expected meta id");
   fail_unless((quarry->holder.length == currKWsize),"Expected size is currKWsize");
   free(input);
 }
 END_TEST
 
 
-void quarry_addIdentifierTests(Suite *suite)
+void quarry_addMetaIdTests(Suite *suite)
 {
-  TCase *tc_core = tcase_create("identifiers");
-  tcase_add_test (tc_core,test_identifier1);
-  tcase_add_test (tc_core,test_identifierKW);
+  TCase *tc_core = tcase_create("meta-identifiers");
+  tcase_add_test (tc_core,test_metaid);
+  tcase_add_test (tc_core,test_metaidKW);
   suite_add_tcase(suite,tc_core);
 }

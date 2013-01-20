@@ -22,6 +22,7 @@ int main(int argc, char **argv){
   quarry_addKeywordTests(suite);
   quarry_addIdentifierTests(suite);
   quarry_addReaderTests(suite);
+  quarry_addMetaIdTests(suite);
   /* Add quote tests */
   quarry_addQuoteTests(suite);
 

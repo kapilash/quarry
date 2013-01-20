@@ -40,6 +40,10 @@ qu_KWTablePtr quarry_util_keywordTableJava();
 
 qu_KWTablePtr quarry_util_keywordTableC();
 
+qu_KWTablePtr quarry_util_keywordTableJavaOpers();
+
+qu_KWTablePtr quarry_util_keywordTableCOperators();
+
 void quarry_util_freeKeywordTable(qu_KWTablePtr kwtable);
 
 int quarry_util_isKeyword(qu_KWTablePtr kwtable, unsigned char *identifier, int len);

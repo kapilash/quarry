@@ -22,7 +22,7 @@ void printSlab(quarry_SlabPtr slab){
   printf("line = %d;",slab->line);
   printf("col = %d;",slab->col);
   printf("length = %d;",slab->slabLength);
-  printf("slabMD = %lx;",slab->slabMD);
+  printf("slabMD = %x;",slab->slabMD);
   printf("content = {");
   for(index = 0;index < slab->slabLength;index++){
     if(slab->data[index] != '\n')
@@ -46,6 +46,7 @@ void printSlab(quarry_SlabPtr slab){
   case   quarry_Whitespace: {printf("WHITESPACE");break;}
   case   quarry_NewLine:    {printf("NEWLINE");break;}
   case quarry_EOF:          {printf("EOF");break;}
+  case quarry_MetaId:       {printf("META");break;}
   default: printf("UNKNOWN");
   }
   printf(";}\n");
@@ -57,15 +58,20 @@ int main(int argc, char **argv){
   long l = 0;
   int lines = 0;
   int comments  = 0;
+  int toPrintType = 100;
   if(argc <2){
     printf("need a file\n");
     exit(1);
+  }
+  if(argc > 2){
+    toPrintType = atoi(argv[2]);
   }
   reader = quarry_newReader(argv[1],quarry_Java);
   while(1){
     slab = quarry_read(reader);
     l++;
-    //  printSlab(slab);
+    if(slab->slabType == toPrintType)
+      printSlab(slab);
     if(slab->slabType == quarry_Comment)
       comments++;
     if(slab->slabType == quarry_EOF)

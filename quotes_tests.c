@@ -56,8 +56,9 @@ START_TEST(test_EmptyDoubleQuotes2)
   input[3] = 'a';
   input[4] = 'b';
 
-
+  
   quarry = quarry_makeQuarry(input,size);
+  quarry->holder.latest = 0;
   quarry->input.index = 1;
   retval = quarry_dqLexer(quarry,1);
   fail_unless((quarry->line == 1),"Line # mismatch");

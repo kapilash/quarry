@@ -36,3 +36,5 @@ int quarry_crlfLexer(quarry_QuarryPtr quarry, int lexerState);
 int quarry_errLexer(quarry_QuarryPtr quarry,int lexerState);
 
 int quarry_idLexer(quarry_QuarryPtr quarry, int lexerState);
+
+int quarry_metaIdLexer(quarry_QuarryPtr quarry, int lexerState);

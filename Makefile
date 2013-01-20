@@ -1,5 +1,5 @@
 
-libquarry.a : comments.o quarry_util.o misc_lexers.o javaKwTable.o cKwTable.o quarry.o
+libquarry.a : comments.o quarry_util.o misc_lexers.o javaKwTable.o cKwTable.o quarry.o javaOperTable.o cOperTable.o
 	ar -cvq libquarry.a $^
 
 
@@ -19,6 +19,20 @@ cKwTable.c: C KWStrGenerator.hs
 javaKwTable.c:	Java KWStrGenerator.hs
 	ghc --make KWStrGenerator.hs
 	./KWStrGenerator Java > javaKwTable.c
+
+cOperTable.c: COperators KWStrGenerator.hs
+	ghc --make KWStrGenerator.hs
+	./KWStrGenerator COperators > cOperTable.c
+
+javaOperTable.c: JavaOpers KWStrGenerator.hs
+	ghc --make KWStrGenerator.hs
+	./KWStrGenerator JavaOpers > javaOperTable.c
+
+cOperTable.o: quarry_kw.h cOperTable.c
+	gcc -c  -O3 cOperTable.c -o cOperTable.o
+
+javaOperTable.o: quarry_kw.h javaOperTable.c
+	gcc -c -O3 javaOperTable.c -o javaOperTable.o
 
 misc_lexers.o : lexers.h quarry.h quarry_kw.h misc_lexers.c
 	gcc -c -O3 misc_lexers.c -o misc_lexers.o
@@ -47,7 +61,10 @@ javakw_tests.o:javakw_tests.c quarry_testsuites.h libquarry.a
 identifier_tests.o:identifier_tests.c quarry_testsuites.h libquarry.a
 	gcc -c identifier_tests.c -o $@
 
-libtestquarry.a : quotes_tests.o comments_tests.o numbers_tests.o javakw_tests.o identifier_tests.o reader_tests.o
+metaid_tests.o: metaid_tests.c quarry_testsuites.h libquarry.a
+	gcc -c metaid_tests.c -o $@
+
+libtestquarry.a : quotes_tests.o comments_tests.o numbers_tests.o javakw_tests.o identifier_tests.o reader_tests.o metaid_tests.o 
 	ar -cvq $@ $^
 
 quarry_tests.out: quarry_testsuites.h quarry_testrunner.c libquarry.a libtestquarry.a

@@ -148,7 +148,10 @@ genCode f = do rf <- readFile f
                printBlock $ kwToBlocks f (lines rf)
                genKeyFile f (lines rf)
 
-genKeyFile f strs = writeFile (f ++ ".key") (unlines $ map show $ zip [0,1..] (Lst.sort strs))
+
+genKeyFile f strs = writeFile (f ++ ".key") (unlines $ (asciiList strs) : ( map show $ zip [0,1..] (Lst.sort strs)))
+
+asciiList = show . Lst.sort . map ord . Lst.nub . concat . Lst.sort
 
 main = do args <- getArgs
           case args of
