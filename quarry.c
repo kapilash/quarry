@@ -235,5 +235,7 @@ void quarry_closeReader(quarry_Reader reader){
   free(qreader->quarry->input.data);
   free(qreader->quarry->holder.data);
   quarry_util_freeKeywordTable(qreader->quarry->kwTable);
+  quarry_util_freeKeywordTable(qreader->quarry->operTable);
+  free(qreader->quarry);
   free(qreader);
 }

@@ -72,7 +72,7 @@ int quarry_operatorLexer(quarry_QuarryPtr quarry, int lexerState){
   Quarry_AppendNext(quarry,nextChar);
   while (Quarry_HasMore(quarry)){
     Quarry_ReadNext(quarry,nextChar);
-    if(!isOperator(nextChar,operChars,nextChar))
+    if(!isOperator(nextChar,operChars,15))
       goto RETURN;  
     Quarry_AppendNext(quarry,nextChar);
   }

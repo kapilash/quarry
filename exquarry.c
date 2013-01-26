@@ -59,6 +59,7 @@ int main(int argc, char **argv){
   int lines = 0;
   int comments  = 0;
   int toPrintType = 100;
+  int toContinue = 1;
   if(argc <2){
     printf("need a file\n");
     exit(1);
@@ -67,7 +68,7 @@ int main(int argc, char **argv){
     toPrintType = atoi(argv[2]);
   }
   reader = quarry_newReader(argv[1],quarry_Java);
-  while(1){
+  while(toContinue){
     slab = quarry_read(reader);
     l++;
     if(slab->slabType == toPrintType)
@@ -75,7 +76,7 @@ int main(int argc, char **argv){
     if(slab->slabType == quarry_Comment)
       comments++;
     if(slab->slabType == quarry_EOF)
-      break;
+      toContinue = 0;
     lines = slab->line;
     quarry_freeSlab(slab);
   }
