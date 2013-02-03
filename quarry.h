@@ -12,6 +12,9 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #ifndef __QUARRY__
 #define __QUARRY__
 #include <sys/types.h>
+#include <stdint.h>
+
+typedef uint32_t u_int32_t;
 
 enum quarry_SlabType{
   quarry_Error,
