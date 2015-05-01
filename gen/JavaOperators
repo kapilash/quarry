@@ -1,37 +1,37 @@
-=
->
-<
-!
-~
-?
-:
-==
-<=
->=
-!=
-&&
-||
-++
---
-+
--
-*
-/
-&
-|
-^
-%
-<<
->>=
->>>
-+=
--=
-*=
-/=
-&=
-|=
-^=
-%=
-<<=
->>=
->>>=
+= Assign
+> GreaterThan
+< LessThan
+! Bang
+~ Tilde
+? QuestionMark
+: Colon
+== IsEqualTo
+<= LessThanEqualTo
+>= GreaterThanEqualTo
+!= NotEqualTo
+&& BooleanAnd
+|| BooleanOr
+++ Increment
+-- Decrement
++  Plus
+- Minus
+* Asterisk
+/ Divide
+& BitwiseAnd
+| BitwiseOr
+^ Caret
+% Mod
+<< LeftShift
+>>= RightShift
+>>> RightShiftZeroFill
++= PlusEquals
+-= MinusEquals
+*= AsteriskEquals
+/= DivEquals
+&= AndEquals
+|= OrEquals
+^= XorEquals
+%= ModEquals
+<<= LeftShiftEquals
+>>= RightShiftEquals
+>>>= RightShiftZeroFillEquals

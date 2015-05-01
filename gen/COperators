@@ -1,35 +1,36 @@
-!
-%
-^
-*
--
-+
-=
-~
-|
-.
-<
->
-/
-?
-+=
--=
-*=
-/=
-%=
-<<=
->>=
-&=
-^=
-|=
-->
-++
---
-<<
->>
-<=
->=
-==
-!=
-&&
-||
+! Bang
+% Mod
+^ Xor
+* Asterisk
+& Ampersand
+- Minus
++ Plus
+= Equals
+~ Tilde
+| BitwiseOr
+. Dot
+< LessThan
+> GreaterThan
+/ Division
+? QuestionMark
++= PlusEquals
+-= MinusEquals
+*= MultEquals
+/= DivEquals
+%= ModEquals
+<<= LeftShiftEquals
+>>= RightShiftEquals
+&=  BitwiseAndEquals
+^= CaratEquals
+|= PipeEquals
+-> Arrow
+++ Increment
+-- Decrement
+<< LeftShift
+>> RightShift
+<= LessThanEquals
+>= GreaterThanEquals
+== IsEqualTo
+!= IsNotEqualTo
+&& BooleanAnd
+|| BooleanOr

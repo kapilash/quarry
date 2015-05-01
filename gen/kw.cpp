@@ -16,31 +16,80 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <cstdlib>
+#include <locale>
 
-struct KWIndex {
-    int asciiCode;
-    int concIndex;
-    int kwLenIndex;
-    int numWords;
+class Keyword {
+private:
+    std::string keyword;
+    std::string name;
+public:
+    Keyword(std::string k, std::string n) : keyword(k), name(n){
+    }
+    Keyword() {}
+    Keyword(Keyword&& other){
+	keyword = std::move(other.keyword);
+	name = std::move(other.name);
+    }
+    std::string getName() const { return name; }
+    std::string getKeyword() const {return keyword;}
+
+    friend bool operator< (const Keyword &l, const Keyword &r)
+    {
+	return l.keyword < r.keyword;
+    }
+
+    friend std::istream& operator>>(std::istream & i, Keyword &key) {
+	i >> key.keyword >> key.name;
+	return i;
+    }
 };
-
-void addBeginning(std::ofstream &outfile) {
+void addCPPBeginning(std::ofstream &outfile) {
     outfile << "/* this is generated code */" << std::endl
-	    << "#include <set>" << std::endl
+	    << "#include <map>" << std::endl
 	    << "#include <string>" << std::endl
 	    << std::endl
 	    << std::endl
 	    << "namespace quarry{" << std::endl;
 }
 
-void addEnding(std::ofstream &outfile) {
+void addCPPEnding(std::ofstream &outfile) {
     outfile << "}" << std::endl;
 }
-void genCode(std::ofstream &outfile, std::string &langName, std::set<std::string> &set) {
-   outfile    << "    void collect" << langName << "(std::set<std::string> &kwset) {" << std::endl;
 
-    for (std::set<std::string>::iterator it = set.begin(); it != set.end(); ++it) {
-	outfile << "        kwset.insert(\"" << *it << "\");" << std::endl;
+void addCSBeginning(std::ofstream &outfile) {
+    outfile << "/* this is generated code */" << std::endl
+	    << "namespace Quarry {" << std::endl
+	    << "using System; " << std::endl;
+}
+void addCSEnding(std::ofstream &outfile){
+    outfile << "}" << std::endl;
+}
+
+std::string toUpperCase(std::string &str) {
+    std::string out(str);
+    std::transform(str.begin(), str.end(), out.begin(), ::toupper);
+    return out;
+}
+void genCSEnum(std::ofstream &outfile, std::string &langName, std::vector<Keyword> &keywords){
+    outfile << "    public enum " << langName << " {" << std::endl ;
+    int  index = 0;
+    for (auto it = keywords.begin(); it != keywords.end(); ++it) {
+	if (index != 0){
+	    outfile << "," << std::endl;
+	}
+	outfile << "        " << it->getName() << " = " << index ;
+	index++;
+    }
+    outfile << std::endl;
+    outfile << "    }" << std::endl << std::endl;
+}
+void genCPPCode(std::ofstream &outfile, std::string &langName, std::vector<Keyword> &set) {
+   outfile    << "    void collect" << langName << "(std::map<std::string,int> &kwmap) {" << std::endl;
+   int ind = 0;
+    for (auto it = set.begin(); it != set.end(); ++it) {
+	outfile << "        kwmap[\"" << it->getKeyword() << "\"] = " << ind << ";" << std::endl;
+	ind++;
     }
     outfile << "    }" << std::endl;
 }
@@ -51,19 +100,30 @@ int main(int argc, char **argv){
 	std::cout << argv[0] << " outputfile <keywords-file> [keywords-file> ... ]" << std::endl;
 	return 1;
     }
-
-    std::ofstream outFile(argv[1]);
-    addBeginning(outFile);
+    std::string cppFileName(argv[1]);
+    std::string csFileName(argv[1]);
+    cppFileName += ".cpp";
+    csFileName += ".cs";
+    std::ofstream cppFile(cppFileName.c_str());
+    std::ofstream csFile(csFileName.c_str());
+    addCPPBeginning(cppFile);
+    addCSBeginning(csFile);
     for(int i=2; i < argc; i++) {
 	std::ifstream inFile(argv[i]);
 	std::string langName(argv[i]);
-	std::string line;
-	std::set<std::string> kwset;
-	while (std::getline(inFile, line)) {
-	    kwset.insert(line);
-	}	
-	genCode(outFile, langName, kwset);
+	std::set<Keyword> kwset;
+	Keyword temp;
+	while (inFile >> temp) {
+	    kwset.insert(temp);
+	}
+	std::vector<Keyword> kwvec;
+	for(std::set<Keyword>::iterator it = kwset.begin(); it != kwset.end(); ++it) {
+	    kwvec.push_back(*it);
+	}
+	std::sort(kwvec.begin(), kwvec.end());
+	genCPPCode(cppFile, langName, kwvec);
+	genCSEnum(csFile, langName, kwvec);
     }
-    addEnding(outFile);
-    
+    addCPPEnding(cppFile);
+    addCSEnding(csFile);
 }

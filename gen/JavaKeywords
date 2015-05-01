@@ -1,50 +1,50 @@
-abstract
-assert
-boolean
-break
-byte
-case
-catch
-char
-class
-const
-continue
-default
-do
-double
-else
-enum
-extends
-final
-finally
-float
-for
-goto
-if
-implements
-import
-instanceof
-int
-interface
-long
-native
-new
-package
-private
-protected
-public
-return
-short
-static
-strictfp
-super
-switch
-synchronized
-this
-throw
-throws
-transient
-try
-void
-volatile
-while
+abstract KWAbstract
+assert KWAssert
+boolean KWBoolean
+break KWBreak
+byte KWByte
+case KWCase
+catch KWCatch
+char KWChar
+class KWClass
+const KWConst
+continue KWContinue
+default KWDefault
+do KWDo
+double KWDouble
+else KWElse
+enum KWEnum
+extends KWExtends
+final KWFinal
+finally KWFinally
+float KWFloat
+for KWFor
+goto KWGoto
+if KWIf
+implements KWImplements
+import KWImport
+instanceof KWInstanceOf
+int KWInt
+interface KWInterface
+long KWLong
+native KWNative
+new KWNew
+package KWPackage
+private KWPrivate
+protected KWProtected
+public KWPublic
+return KWReturn
+short KWShort
+static KWStatic
+strictfp KWStrictfp
+super KWSuper
+switch KWSwitch
+synchronized KWSynchronized
+this KWThis
+throw KWThrow
+throws KWThrows
+transient KWTransient
+try KWTry
+void KWVoid
+volatile KWVolatile
+while KWWhile
