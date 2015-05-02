@@ -31,12 +31,22 @@ public:
 	keyword = std::move(other.keyword);
 	name = std::move(other.name);
     }
+    Keyword(const Keyword& other){
+	keyword = other.keyword;
+	name = other.name;
+    }
     std::string getName() const { return name; }
     std::string getKeyword() const {return keyword;}
 
     friend bool operator< (const Keyword &l, const Keyword &r)
     {
 	return l.keyword < r.keyword;
+    }
+
+    void operator= (const Keyword that)
+    {
+	keyword = that.keyword;
+	name = that.name;
     }
 
     friend std::istream& operator>>(std::istream & i, Keyword &key) {
