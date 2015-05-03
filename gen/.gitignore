@@ -5,3 +5,5 @@
 !JavaOperators
 !JavaKeywords
 !.gitignore
+!CMakeLists.txt
+!verify.cpp

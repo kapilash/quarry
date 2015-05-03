@@ -22,7 +22,7 @@
 ^ Caret
 % Mod
 << LeftShift
->>= RightShift
+>> RightShift
 >>> RightShiftZeroFill
 += PlusEquals
 -= MinusEquals
