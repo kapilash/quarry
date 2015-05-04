@@ -60,7 +60,7 @@ void addCPPBeginning(std::ofstream &outfile) {
 	    << "#include <string>" << std::endl
 	    << std::endl
 	    << std::endl
-	    << "namespace quarry{" << std::endl;
+	    << "namespace Quarry{" << std::endl;
 }
 
 void addCPPEnding(std::ofstream &outfile) {

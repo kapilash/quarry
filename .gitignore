@@ -21,3 +21,4 @@ KWStrGenerator
 *.exe
 *.out
 *.app
+build/
