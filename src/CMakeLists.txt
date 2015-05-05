@@ -8,13 +8,6 @@ set(SOURCES
   QContext.cpp
   QuarryMaps.cpp
 )
-find_package(Boost
-  1.57.0
-   COMPONENTS
-  unit_test_framework
-  test_exec_monitor
-   REQUIRED
- )
 
 set(INCFOLDER ${PROJECT_SOURCE_DIR}/inc )
 
