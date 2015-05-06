@@ -14,3 +14,6 @@ set(SOURCES
 
 add_library(quarry SHARED   ${SOURCES})
 add_library(squarry STATIC   ${SOURCES})
+
+install (TARGETS quarry squarry DESTINATION lib)
+install (FILES quarry.h DESTINATION include)
