@@ -21,7 +21,10 @@ int main(int argc, char **argv){
   CuSuiteAddSuite(suite, quarry_quoteTests());
   CuSuiteAddSuite(suite, quarry_numbersTests());
   CuSuiteAddSuite(suite, quarry_metaIdTests());
+
   CuSuiteAddSuite(suite, quarry_readerTests());
+
+  
   CuSuiteRun(suite);
   CuSuiteSummary(suite, output);
   CuSuiteDetails(suite, output);

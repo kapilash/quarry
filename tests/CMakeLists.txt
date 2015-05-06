@@ -10,7 +10,8 @@ set(SOURCES quarry_testrunner.c
             CuTest.c
             CuTest.h)
 
+
 configure_file(HugeJavaIn HugeJavaIn COPYONLY)
 
 add_executable(qtests ${SOURCES})
-target_link_libraries(qtests squarry)
+target_link_libraries(qtests quarry)

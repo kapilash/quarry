@@ -11,7 +11,7 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 */
 #ifndef __QUARRY_STRTAB__
 #define __QUARRY_STRTAB__
-
+#include "quarry_export.h"
 
 struct quarry_util_KWsPerLetter_{
   const char *word;
@@ -36,8 +36,10 @@ struct quarry_util_KWTable_{
 typedef struct quarry_util_KWTable_ qu_KWTable;
 typedef struct quarry_util_KWTable_ *qu_KWTablePtr;
 
+QUARRY_EXPORT
 qu_KWTablePtr quarry_util_keywordTableJava();
 
+QUARRY_EXPORT
 qu_KWTablePtr quarry_util_keywordTableC();
 
 qu_KWTablePtr quarry_util_keywordTableJavaOpers();

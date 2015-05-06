@@ -56,10 +56,13 @@ typedef struct quarry_Quarry_ *quarry_QuarryPtr;
 
 typedef int (*quarry_Lexer)(quarry_QuarryPtr, int);
 
+QUARRY_EXPORT
 quarry_QuarryPtr quarry_makeQuarry(unsigned char *buffer, int bufferSize);
+
 
 void quarry_printQuarry(quarry_QuarryPtr q);
 
+QUARRY_EXPORT
 void quarry_printSlab(quarry_SlabPtr slab);
 
 struct quarry_Reader_ {

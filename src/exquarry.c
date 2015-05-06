@@ -71,8 +71,9 @@ int main(int argc, char **argv){
   while(toContinue){
     slab = quarry_read(reader);
     l++;
-    if(slab->slabType == toPrintType)
-      printSlab(slab);
+    printSlab(slab);
+    
+     
     if(slab->slabType == quarry_Comment)
       comments++;
     if(slab->slabType == quarry_EOF)
