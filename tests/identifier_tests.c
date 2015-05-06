@@ -82,10 +82,10 @@ START_TEST(test_identifierKW)
 END_TEST
 
 
-void quarry_addIdentifierTests(Suite *suite)
+CuSuite* quarry_identifierTests()
 {
-  TCase *tc_core = tcase_create("identifiers");
-  tcase_add_test (tc_core,test_identifier1);
-  tcase_add_test (tc_core,test_identifierKW);
-  suite_add_tcase(suite,tc_core);
+    CuSuite *suite = CuSuiteNew();
+    SUITE_ADD_TEST (suite,test_identifier1);
+    SUITE_ADD_TEST (suite,test_identifierKW);
+    return suite;
 }

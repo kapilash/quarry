@@ -13,24 +13,17 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 
 int main(int argc, char **argv){
-  int numberFailed = 0;
-  Suite *suite = suite_create("lexers");
+  CuString *output = CuStringNew();
+  CuSuite* suite = CuSuiteNew();
 
-  /* Add comment tests */
-  quarry_addCommentTests(suite);
-  quarry_addNumbersTests(suite);
-  quarry_addKeywordTests(suite);
-  quarry_addIdentifierTests(suite);
-  quarry_addReaderTests(suite);
-  quarry_addMetaIdTests(suite);
-  /* Add quote tests */
-  quarry_addQuoteTests(suite);
-
-  /*Create runner and run the suite*/
-  SRunner *runner = srunner_create(suite);
-  srunner_run_all(runner,CK_NORMAL);
-  printf("\n");
-  numberFailed = srunner_ntests_failed(runner);
-  srunner_free(runner);
-  return numberFailed;
+  CuSuiteAddSuite(suite, quarry_commentTests());
+  CuSuiteAddSuite(suite, quarry_identifierTests());
+  CuSuiteAddSuite(suite, quarry_quoteTests());
+  CuSuiteAddSuite(suite, quarry_numbersTests());
+  CuSuiteAddSuite(suite, quarry_metaIdTests());
+  CuSuiteAddSuite(suite, quarry_readerTests());
+  CuSuiteRun(suite);
+  CuSuiteSummary(suite, output);
+  CuSuiteDetails(suite, output);
+  printf("%s\n", output->buffer);
 }

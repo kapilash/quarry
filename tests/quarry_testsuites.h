@@ -13,19 +13,20 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #define __TRAWCKER_TESTSUITES__
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
+#include "CuTest.h"
 
-void quarry_addCommentTests(Suite *suite);
+#define START_TEST(x)  void x(CuTest *tc)
+#define fail_unless(x,y) CuAssertTrue(tc, x)
+#define fail(x) CuFail(tc,x)
+#define END_TEST 
 
-void quarry_addQuoteTests(Suite *suite);
+CuSuite* quarry_commentTests();
+CuSuite* quarry_identifierTests();
+CuSuite* quarry_quoteTests();
+CuSuite* quarry_numbersTests();
+CuSuite* quarry_keywordTests();
+CuSuite* quarry_readerTests();
 
-void quarry_addNumbersTests(Suite *suite);
+CuSuite* quarry_metaIdTests();
 
-void quarry_addKeywordTests(Suite *suite);
-
-void quarry_addIdentifierTests(Suite *suite);
-
-void quarry_addReaderTests(Suite *suite);
-
-void quarry_addMetaIdTests(Suite *suite);
 #endif

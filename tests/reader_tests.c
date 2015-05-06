@@ -58,10 +58,11 @@ START_TEST(test_readGT5KB)
 END_TEST
 
 
-void quarry_addReaderTests(Suite *suite)
+CuSuite* quarry_readerTests()
 {
-  TCase *tc_core = tcase_create("reader");
-  tcase_add_test (tc_core,test_readerNew);
-  tcase_add_test (tc_core,test_readGT5KB);
-  suite_add_tcase(suite,tc_core);
+    CuSuite *suite = CuSuiteNew();
+  
+  SUITE_ADD_TEST (suite,test_readerNew);
+  SUITE_ADD_TEST (suite,test_readGT5KB);
+  return suite;
 }
