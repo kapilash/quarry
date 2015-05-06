@@ -10,27 +10,59 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 3) THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "quarry_testsuites.h"
+#include "lexers.h"
+#include "quarry_internal.h"
 
 
-int main(int argc, char **argv){
-  int numberFailed = 0;
-  Suite *suite = suite_create("lexers");
+static char *testFileName = "HugeJavaIn";
 
-  /* Add comment tests */
-  quarry_addCommentTests(suite);
-  quarry_addNumbersTests(suite);
-  quarry_addKeywordTests(suite);
-  quarry_addIdentifierTests(suite);
-  quarry_addReaderTests(suite);
-  quarry_addMetaIdTests(suite);
-  /* Add quote tests */
-  quarry_addQuoteTests(suite);
+START_TEST(test_readerNew)
+{
+  QReaderPtr reader;
+  int index;
 
-  /*Create runner and run the suite*/
-  SRunner *runner = srunner_create(suite);
-  srunner_run_all(runner,CK_NORMAL);
-  printf("\n");
-  numberFailed = srunner_ntests_failed(runner);
-  srunner_free(runner);
-  return numberFailed;
+  printf("\nRunning tests on reader.");
+  reader = (QReaderPtr)quarry_newReader(testFileName,quarry_Java);
+  fail_unless((reader != NULL),"expected valid reader");
+  fail_unless((reader->lexers != NULL),"expected valid lexers");
+  fail_unless((reader->lexers[0] == &quarry_errLexer),"expected error lexer at 0");
+  for(index = 1;index<256;index++){
+    fail_unless((reader->lexers[index]  != NULL),"expected a valid lexer");
+    fail_unless((reader->lexers[index] != &quarry_errLexer),"unexpected error lexer");
+  }
+  fail_unless((reader->quarry->kwTable != NULL),"expected a valid keyword table for java");
+
+  quarry_closeReader(reader);
+  
+}
+END_TEST
+
+START_TEST(test_readGT5KB)
+{
+  QReaderPtr reader;
+  int index;
+  quarry_SlabPtr slabPtr;
+  long l = 0;
+
+  printf(".");
+  reader = (QReaderPtr)quarry_newReader(testFileName,quarry_Java);
+  while(1){
+    slabPtr = quarry_read(reader);
+    l++;
+    if(slabPtr->slabType == quarry_EOF)
+      break;
+    quarry_freeSlab(slabPtr);
+  }
+  quarry_closeReader(reader);
+}
+END_TEST
+
+
+CuSuite* quarry_readerTests()
+{
+    CuSuite *suite = CuSuiteNew();
+  
+  SUITE_ADD_TEST (suite,test_readerNew);
+  SUITE_ADD_TEST (suite,test_readGT5KB);
+  return suite;
 }

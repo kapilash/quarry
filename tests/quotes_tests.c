@@ -228,9 +228,9 @@ START_TEST(test_EmptySingleQuotes2)
   input[2] = '\n';
   input[3] = 'a';
   input[4] = 'b';
-
-
+  
   quarry = quarry_makeQuarry(input,size);
+  quarry->holder.latest = 0; 
   quarry->input.index = 1;
   retval = quarry_sqLexer(quarry,1);
   fail_unless((quarry->line == 1),"Line # mismatch");
@@ -267,22 +267,22 @@ START_TEST(test_SingleQuotesNewLines)
 }
 END_TEST
 
-void quarry_addQuoteTests(Suite *suite)
+CuSuite* quarry_quoteTests()
 {
-  TCase *tc_core = tcase_create("Quotes");
-  tcase_add_test (tc_core,test_EmptyDoubleQuotes1);
-  tcase_add_test (tc_core,test_EmptyDoubleQuotes2);
-  tcase_add_test (tc_core,test_HolderLatestSlash1);
-  tcase_add_test (tc_core,test_HolderLatestSlash2);
-  tcase_add_test (tc_core,test_HolderWithBSedChars);
-  tcase_add_test (tc_core,test_DoubleQuotesNewLines);
+    CuSuite *suite =  CuSuiteNew();
+  SUITE_ADD_TEST (suite,test_EmptyDoubleQuotes1);
+  SUITE_ADD_TEST (suite,test_EmptyDoubleQuotes2);
+  SUITE_ADD_TEST (suite,test_HolderLatestSlash1);
+  SUITE_ADD_TEST (suite,test_HolderLatestSlash2);
+  SUITE_ADD_TEST (suite,test_HolderWithBSedChars);
+  SUITE_ADD_TEST (suite,test_DoubleQuotesNewLines);
 
 
-  tcase_add_test (tc_core,test_EmptySingleQuotes1);
-  tcase_add_test (tc_core,test_EmptySingleQuotes2);
+  SUITE_ADD_TEST (suite,test_EmptySingleQuotes1);
+  SUITE_ADD_TEST (suite,test_EmptySingleQuotes2);
 
-  tcase_add_test (tc_core,test_SingleQuotesNewLines);
+  SUITE_ADD_TEST (suite,test_SingleQuotesNewLines);
 
-  suite_add_tcase(suite,tc_core);
+  return suite;
 }
 

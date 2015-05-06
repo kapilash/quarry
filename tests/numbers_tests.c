@@ -310,19 +310,18 @@ START_TEST(test_HexalWithL)
 
 }
 END_TEST
-void quarry_addNumbersTests(Suite *suite)
+
+CuSuite* quarry_numbersTests()
 {
-  TCase *tc_core = tcase_create("numbers");
-  tcase_add_test (tc_core,test_DecimalsWithUnderscore);
-  tcase_add_test (tc_core,test_DecimalEndWithL);
-  tcase_add_test (tc_core,test_DecimalEndWithl);
-  tcase_add_test (tc_core,test_DecimalsEndBlock);
-  tcase_add_test (tc_core,test_BinaryTest);
-  tcase_add_test (tc_core,test_Octal);
-  tcase_add_test (tc_core,test_Hexal);
-  tcase_add_test (tc_core,test_HexalWithL);
-
-
-  suite_add_tcase(suite,tc_core);
+    CuSuite *suite = CuSuiteNew();
+  SUITE_ADD_TEST (suite,test_DecimalsWithUnderscore);
+  SUITE_ADD_TEST (suite,test_DecimalEndWithL);
+  SUITE_ADD_TEST (suite,test_DecimalEndWithl);
+  SUITE_ADD_TEST (suite,test_DecimalsEndBlock);
+  SUITE_ADD_TEST (suite,test_BinaryTest);
+  SUITE_ADD_TEST (suite,test_Octal);
+  SUITE_ADD_TEST (suite,test_Hexal);
+  SUITE_ADD_TEST (suite,test_HexalWithL);
+  return suite;
 }
 

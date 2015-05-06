@@ -82,10 +82,10 @@ START_TEST(test_metaidKW)
 END_TEST
 
 
-void quarry_addMetaIdTests(Suite *suite)
+CuSuite* quarry_metaIdTests()
 {
-  TCase *tc_core = tcase_create("meta-identifiers");
-  tcase_add_test (tc_core,test_metaid);
-  tcase_add_test (tc_core,test_metaidKW);
-  suite_add_tcase(suite,tc_core);
+    CuSuite *suite = CuSuiteNew();
+  SUITE_ADD_TEST (suite,test_metaid);
+  SUITE_ADD_TEST (suite,test_metaidKW);
+  return suite;
 }

@@ -530,6 +530,7 @@ START_TEST(test_LineCommentNLFirst)
   fail_unless((quarry->holder.md == 1), "expected line comments");
 }
 END_TEST
+
 START_TEST(test_EmptyLineComment)
 {
   unsigned char *input;
@@ -560,27 +561,27 @@ START_TEST(test_EmptyLineComment)
 }
 END_TEST
 
-void quarry_addCommentTests(Suite *suite)
+CuSuite* quarry_commentTests()
 {
-  TCase *tc_core = tcase_create("Comments");
-  tcase_add_test (tc_core,test_In0Ret0Test);
-  tcase_add_test (tc_core,test_In0Ret0Test1);
-  tcase_add_test (tc_core,test_In0Ret0TestLast);
-  tcase_add_test (tc_core,test_In0Ret0MaxSlabLenTest);
-  tcase_add_test (tc_core,test_In0Ret3LastCharStar);
-  tcase_add_test (tc_core,test_In0Ret2LastCharSlash);
-  tcase_add_test (tc_core,test_In3Ret0Immediate);
-  tcase_add_test (tc_core,test_In3Ret0Late);
-  tcase_add_test (tc_core,test_In2Ret0FirstCharSlash);
-  tcase_add_test (tc_core,test_EmptyCommentIn0);
-  tcase_add_test (tc_core,test_EmptyCommentIn1);
-  tcase_add_test (tc_core,test_EmptyCommentIn2);
-  tcase_add_test (tc_core,test_EmptyCommentIn3);
-
-  tcase_add_test (tc_core,test_EmptyLineComment);
-  tcase_add_test (tc_core,test_SingleLineComment);
-  tcase_add_test (tc_core,test_LineCommentSize2);
-  tcase_add_test (tc_core,test_LineCommentNLFirst);
-  suite_add_tcase(suite,tc_core);
+    CuSuite *suite = CuSuiteNew();
+    SUITE_ADD_TEST (suite,test_In0Ret0Test);
+    SUITE_ADD_TEST (suite,test_In0Ret0Test1);
+    SUITE_ADD_TEST (suite,test_In0Ret0TestLast);
+    SUITE_ADD_TEST (suite,test_In0Ret0MaxSlabLenTest);
+    SUITE_ADD_TEST (suite,test_In0Ret3LastCharStar);
+    SUITE_ADD_TEST (suite,test_In0Ret2LastCharSlash);
+    SUITE_ADD_TEST (suite,test_In3Ret0Immediate);
+    SUITE_ADD_TEST (suite,test_In3Ret0Late);
+    SUITE_ADD_TEST (suite,test_In2Ret0FirstCharSlash);
+    SUITE_ADD_TEST (suite,test_EmptyCommentIn0);
+    SUITE_ADD_TEST (suite,test_EmptyCommentIn1);
+    SUITE_ADD_TEST (suite,test_EmptyCommentIn2);
+    SUITE_ADD_TEST (suite,test_EmptyCommentIn3);
+    
+    SUITE_ADD_TEST (suite,test_EmptyLineComment);
+    SUITE_ADD_TEST (suite,test_SingleLineComment);
+    SUITE_ADD_TEST (suite,test_LineCommentSize2);
+    SUITE_ADD_TEST (suite,test_LineCommentNLFirst);
+    return suite;
 }
 
