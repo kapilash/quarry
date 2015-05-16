@@ -16,20 +16,24 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 const size_t QRY_BUFFER_SIZE = 4096;
 
-static int fillQuarryInput(QReaderPtr reader,quarry_SlabPtr slab){
-  if(feof(reader->file)){
-    slab->slabType = quarry_EOF;
+static int fillQuarryInput(QReaderPtr reader,quarry_SlabPtr slab) {
+    if(NULL == reader->file) {
+	return 0;
+    }
+    
+    if(feof(reader->file)){
+	slab->slabType = quarry_EOF;
+	return 0;
+    }
+    reader->quarry->input.length = fread(reader->quarry->input.data,sizeof(unsigned char),QRY_BUFFER_SIZE,reader->file);
+    reader->quarry->input.index = 0;
+    if(!ferror(reader->file)){
+	return 1;
+    }
+    fputs("error reading file\n",stderr);
+    reader->quarry->input.length = 0;
+    slab->slabType = quarry_Error;
     return 0;
-  }
-  reader->quarry->input.length = fread(reader->quarry->input.data,sizeof(unsigned char),QRY_BUFFER_SIZE,reader->file);
-  reader->quarry->input.index = 0;
-  if(!ferror(reader->file)){
-    return 1;
-  }
-  fputs("error reading file\n",stderr);
-  reader->quarry->input.length = 0;
-  slab->slabType = quarry_Error;
-  return 0;
 }
 
 static void addCLexers(QReaderPtr reader){
@@ -54,6 +58,7 @@ static void addJavaLexers(QReaderPtr reader){
   reader->quarry->kwTable = quarry_util_keywordTableJava();
   reader->quarry->operTable = quarry_util_keywordTableJavaOpers();
 }
+
 
 quarry_Reader quarry_newReader(const char *fileName, quarry_PL pl){
   QReaderPtr reader;

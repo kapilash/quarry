@@ -17,7 +17,7 @@ add_library(quarry SHARED   ${SOURCES})
 add_executable(qexample "exquarry.c")
 
 target_link_libraries(qexample quarry)
-GENERATE_EXPORT_HEADER(quarry)
+
 
 install (TARGETS quarry  DESTINATION lib)
 install (FILES quarry.h DESTINATION include)
