@@ -10,9 +10,14 @@ set(SOURCES
    misc_lexers.c
    quarry.c
    quarry_util.c
-)
+   quarry.h
+   quarry_internal.h
+   quarry_kw.h
+   lexers.h
+  )
 
 add_library(quarry SHARED   ${SOURCES})
+GENERATE_EXPORT_HEADER(quarry)
 
 add_executable(qexample "exquarry.c")
 

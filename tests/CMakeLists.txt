@@ -12,6 +12,6 @@ set(SOURCES quarry_testrunner.c
 
 
 configure_file(HugeJavaIn HugeJavaIn COPYONLY)
-
+include_directories(${PROJECT_SOURCE_DIR}/src)
 add_executable(qtests ${SOURCES})
 target_link_libraries(qtests quarry)
