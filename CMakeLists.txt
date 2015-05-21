@@ -7,7 +7,7 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.56 REQUIRED COMPONENTS system filesystem unit_test_framework)
 MESSAGE(STATUS "** Boost Include: ${Boost_LIBRARIES}")
 
-include_directories (${PROJECT_SOURCE_DIR}/inc ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src ${Boost_INCLUDE_DIR})
+include_directories (${PROJECT_SOURCE_DIR}/inc ${PROJECT_BINARY_DIR}/src ${Boost_INCLUDE_DIR})
 include(GenerateExportHeader)
 add_subdirectory(gen)
 add_subdirectory(src)
