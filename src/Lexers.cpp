@@ -103,8 +103,7 @@ namespace Quarry {
 		outSlab->slabType = quarry_Comment;
 		outSlab->line = reader.getLine();
 		outSlab->col = col;
-		outSlab->data = new unsigned char[text.length() + 1];
-		std::memcpy(outSlab->data, text.c_str(), text.length());
+		outSlab->data = (unsigned char*)text.c_str();
 		outSlab->slabLength = text.length();
 		outSlab->slabMD = 0;
 	    }
@@ -128,8 +127,7 @@ namespace Quarry {
 		outSlab->slabType = quarry_Comment;
 		outSlab->line = reader.getLine();
 		outSlab->col = col;
-		outSlab->data = new unsigned char[text.length() + 1];
-		std::memcpy(outSlab->data, text.c_str(), text.length());
+		outSlab->data = (unsigned char *)text.c_str();
 		outSlab->slabLength = text.length();
 		outSlab->slabMD = 1;
 	    }
@@ -160,8 +158,7 @@ namespace Quarry {
 	    outSlab->slabType = quarry_Identifier;
 	    outSlab->line = reader.getLine();
 	    outSlab->col = col;
-	    outSlab->data = new unsigned char[text.length()];
-	    std::memcpy(outSlab->data, text.c_str(), text.length());
+	    outSlab->data = (unsigned char *)text.c_str();
 	    outSlab->slabLength = text.length();
 	    outSlab->slabMD = 0;
 	    return outSlab;
@@ -183,8 +180,7 @@ namespace Quarry {
 	    outSlab->col = col;
 	    if (i < 0) {
 		outSlab->slabType = quarry_Identifier;
-		outSlab->data = new unsigned char[text.length()];
-		std::memcpy(outSlab->data, text.c_str(), text.length());
+		outSlab->data = (unsigned char *)text.c_str();
 		outSlab->slabLength = text.length();
 		outSlab->slabMD = 0;
 		return outSlab;
@@ -199,6 +195,43 @@ namespace Quarry {
 	}
     };
 
+    class SchemeHashLexer : public BaseLexer {
+    private:
+	quarry_SlabPtr scanBool(QReader &reader, QContext &context, bool b) const {
+	    return nullptr;
+	}
+	quarry_SlabPtr scanChar(QReader &reader, QContext &context) const {
+	    reader.next();
+	    
+	    return nullptr;
+	}
+	quarry_SlabPtr scanComment(QReader &reader, QContext &context) const {
+	    return nullptr;
+	}
+    public:
+	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
+	    reader.next();
+	    if (reader.hasMore()){
+		if(';' == reader.peekNext()) {
+		    SingleCharComment comment;
+		    return comment.scan(reader, context);
+		}
+		if('f' == reader.peekNext() || 'F' == reader.peekNext()) {
+		    return scanBool(reader, context, false);
+		}
+		if('t' == reader.peekNext() || 'T' == reader.peekNext()) {
+		    return scanBool(reader, context, true);
+		}
+		if('|' == reader.peekNext()) {
+		    return scanComment(reader, context);
+		}
+		if('\\' == reader.peekNext()) {
+		    return scanChar(reader, context);
+		}
+	    }
+	    return nullptr;
+	}
+    };
     class CCharLexer : public BaseLexer {
     public:
 	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
@@ -232,8 +265,7 @@ namespace Quarry {
 	    outSlab->col = col;
 	    if (i < 0) {
 		outSlab->slabType = quarry_Identifier;
-		outSlab->data = new unsigned char[text.length()];
-		std::memcpy(outSlab->data, text.c_str(), text.length());
+		outSlab->data = (unsigned char *)text.c_str();
 		outSlab->slabLength = text.length();
 		outSlab->slabMD = 0;
 		return outSlab;
@@ -246,7 +278,7 @@ namespace Quarry {
 		return outSlab;
 	    }
 	}
-    }
+    };
     
     void addPunctuationLexers (QContext &context) {
 	context.lexers[';'] = new SingleCharLexer (';', quarry_Punctuation);
@@ -276,5 +308,4 @@ namespace Quarry {
 	context.lexers['\r'] = new CRLexer();
 	context.lexers['\n'] = new LFLexer();
     }
-
 }
