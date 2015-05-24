@@ -65,4 +65,6 @@ namespace Quarry {
 	std::map<std::string, int> operators;
 	BaseLexer* lexers[256];
     };
+
+    BaseLexer* getDblCharCommentLexer(char b, char s, char e);
 }

@@ -2,30 +2,38 @@
 
 #include <vector>
 #include <cstdio>
+#include <stack>
 
 namespace Quarry {
     class QReader{
+    private:
+	void read();
     public:
 	QReader(const char *fileName);
-	QReader(const unsigned char *byteArray, int length, int l, int col);
+	QReader(const unsigned char *byteArray, size_t length, int l, int col);
 
-	bool read();
 
-	inline bool hasMore() const {
-	    return !(pos >= length);
+
+	inline bool hasMore()  {
+	    if (bytes.empty()) {
+		read();
+	    }
+	    return !(bytes.empty());
 	}
             
 	inline unsigned char peekNext() const{
-	    return bytes[pos];
+	    return bytes.top();
 	}
             
 	inline unsigned char next() {
-	    unsigned char n = bytes[pos];++pos; ++column; return n;
-	}
-
-	inline void incrementLine(){
-	    ++line;
-	    column = 1;
+	    unsigned char n = bytes.top();
+	    bytes.pop();
+	    ++column;
+	    if (n == '\n') {
+		++line;
+		column = 0;
+	    }
+	    return n;
 	}
             
 	inline int getCol() { return column;}
@@ -36,9 +44,9 @@ namespace Quarry {
     private:
 	bool isInMemory;
 	std::FILE *fp;
-	unsigned char *bytes;
-	size_t length;
-	size_t pos;
+
+	std::stack<unsigned char> bytes;
+	
 	int line;
 	int column;
     };

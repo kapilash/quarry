@@ -16,6 +16,15 @@ namespace Quarry {
         return fopen(fileName,"rb");
 #endif
     }
+
+    static void fillStack(std::stack<unsigned char> &bytes,const unsigned char *byteArray, size_t arrayLength) {
+	for(int i=arrayLength; i>0; --i) {
+	    auto c = byteArray[i-1];
+	    if (c != '\r') {
+		bytes.push(c);
+	    }
+	}	
+    }
     
     QReader::QReader(const char *fileName){
         fp = OpenFile(fileName);
@@ -25,47 +34,39 @@ namespace Quarry {
         isInMemory = false;
         line = 1;
         column = 1;
-        bytes = new unsigned char[BUF_SIZE];
-        length = BUF_SIZE;
-        pos = -1;
     }
 
-    QReader::QReader(const unsigned char *byteArray, int arrayLength, int l, int c){
+    QReader::QReader(const unsigned char *byteArray, size_t arrayLength, int l, int c){
         fp = NULL;
-        length = arrayLength;
-        bytes = new unsigned char[length];
-        memcpy(bytes, byteArray, length);
+        fillStack(bytes, byteArray, arrayLength);
         line = l; 
         column = c;
         isInMemory = true;
-        pos = 0;
     }
 
-    bool QReader::read() {
+    void QReader::read() {
         if (isInMemory) {
-            return false;
+            return ;
         }
         
         if (feof(fp)) {
-            return false;
+            return;
         }
 
-        length = fread(bytes, sizeof(unsigned char), length, fp);
-        pos = 0;
+	unsigned char *byteArray = new unsigned char[BUF_SIZE];
+        int length = fread(byteArray, sizeof(unsigned char), BUF_SIZE, fp);
         if (ferror(fp)) {
-            return false;
+            return;
         }
-        return true;                
+	fillStack(bytes, byteArray, length);
+        return;                
     }
     
     QReader::~QReader() {
         if (NULL != fp) {
             fclose(fp);
         }
-        delete []bytes;
-        length = 0;
         line = 0;
         column = 0;
-        pos = 0;
     }
 }

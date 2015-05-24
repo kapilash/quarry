@@ -62,7 +62,6 @@ namespace Quarry {
 	
 	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
 	    auto ret = SingleCharLexer::scan(reader, context);
-	    reader.incrementLine();
 	    return ret;
 	}
     };
@@ -110,11 +109,12 @@ namespace Quarry {
 	    while (reader.hasMore()) {
 		auto c = reader.next();
 		if (c == second) {
-		    if (reader.hasMore() && (reader.peekNext() == second)) {
+		    if (reader.hasMore() && (reader.peekNext() == last)) {
 			reader.next();
 			count--;
 			if (count < 1)
 			    break;
+			text.append(1,last);
 		    }
 		}
 		else if (c == begin) {
@@ -148,9 +148,7 @@ namespace Quarry {
 		std::string text;
 		while (reader.hasMore() && (reader.peekNext() != '\n')) {
 		    nextByte = reader.next();
-		    if (nextByte != '\r') {
 			text.append(1,nextByte);
-		    }
 		}
 		outSlab->slabType = quarry_Comment;
 		outSlab->line = reader.getLine();
@@ -158,6 +156,7 @@ namespace Quarry {
 		outSlab->data = (unsigned char*)text.c_str();
 		outSlab->slabLength = text.length();
 		outSlab->slabMD = 0;
+		reader.next(); // consume the new line
 	    }
 	    else if (reader.hasMore() && (reader.peekNext() != '*')) {
 		reader.next();
@@ -170,9 +169,6 @@ namespace Quarry {
 			    reader.next();
 			    break;
 			}
-		    }
-		    if (c == '\n') {
-			reader.incrementLine();
 		    }
 		    text.append(1,c);
 		}
@@ -359,5 +355,9 @@ namespace Quarry {
 	}
 	context.lexers['\r'] = new CRLexer();
 	context.lexers['\n'] = new LFLexer();
+    }
+
+    BaseLexer* getDblCharCommentLexer(char b, char s, char e) {
+	return new DoubleCharComment(b,s,e);
     }
 }
