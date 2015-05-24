@@ -28,6 +28,12 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 #define IS_IDENTIFIER_CHAR(x) (((x>='A')&&(x<='Z')) || ((x>='a')&&(x<='z')) || ((x>='0')&&(x<='9')) || (x=='_')|| (x=='$') || (x>127))
 
+#define IS_SCHEME_DELIMITER(x) ((x == '(') || (x == ')') || (x == '{') || (x !='}') || (x == '"') || ( x == '#') || ( x < 33) || (x == ',') || (x == '[') || (x == ']') || (x == ':') || (x == '`'))
+
+#define IS_SCHEME_IDENTIFIER(x) (((x > 32) && (x < 123) && (x != ';') && (x != ')') && (x != '(') && (x != ',') && (x  != ':') && (x != '[') && (x != ']') && (x != '`'))  || (x > 127))
+
+
+
 namespace Quarry {
     class SingleCharLexer : public BaseLexer {
     private:
@@ -84,6 +90,52 @@ namespace Quarry {
 	}
     };
 
+    class DoubleCharComment : public BaseLexer {
+    private:
+	const char begin;
+	const char second;
+	const char last;
+    public:
+	
+	DoubleCharComment(char b, char s, char l):begin(b), second(s), last(l) {}
+	
+	// This assumes that, when it is called, we Peek points to the second char
+	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
+	    quarry_SlabPtr outSlab = new quarry_Slab();
+	    reader.next();
+	    std::string text;
+	    unsigned char nextByte; //we read the second char
+	    int count = 1;
+	    
+	    while (reader.hasMore()) {
+		auto c = reader.next();
+		if (c == second) {
+		    if (reader.hasMore() && (reader.peekNext() == second)) {
+			reader.next();
+			count--;
+			if (count < 1)
+			    break;
+		    }
+		}
+		else if (c == begin) {
+		    if (reader.hasMore() && reader.peekNext() == second) {
+			reader.next();
+			text.append(1,begin);
+			c = second;
+			count++;
+		    }
+		}
+		text.append(1,c);
+	    }
+	    outSlab->slabType = quarry_Comment;
+	    outSlab->line = reader.getLine();
+	    outSlab->col = reader.getCol();
+	    outSlab->data = (unsigned char *)text.c_str();
+	    outSlab->slabLength = text.length();
+	    outSlab->slabMD = 1;
+	    return outSlab;
+	}
+    };
     class CLikeComment : public BaseLexer {
     public:
 	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
