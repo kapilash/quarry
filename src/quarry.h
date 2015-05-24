@@ -31,6 +31,7 @@ enum quarry_SlabType{
   quarry_Whitespace,
   quarry_NewLine,
   quarry_MetaId,
+  quarry_Bool,
   quarry_EOF
 };
 

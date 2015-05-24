@@ -48,9 +48,8 @@ namespace Quarry {
 	    outSlab->slabType = slabType;
 	    outSlab->line = reader.getLine();
 	    outSlab->col = reader.getCol();
-	    outSlab->data = new unsigned char[1];
-	    outSlab->data[0] = c;
-	    outSlab->slabLength = 1;
+	    outSlab->data = nullptr;
+	    outSlab->slabLength = 0;
 	    outSlab->slabMD = c;
 	    return outSlab;
 	}
@@ -81,9 +80,8 @@ namespace Quarry {
 	    outSlab->slabType = quarry_NewLine;
 	    outSlab->line = reader.getLine();
 	    outSlab->col = reader.getCol();
-	    outSlab->data = new unsigned char[1];
-	    outSlab->data[0] = c;
-	    outSlab->slabLength = 1;
+	    outSlab->data = nullptr;
+	    outSlab->slabLength = 0;
 	    outSlab->slabMD = crlf;
 	    return outSlab;
 	}
@@ -159,34 +157,17 @@ namespace Quarry {
 		reader.next(); // consume the new line
 	    }
 	    else if (reader.hasMore() && (reader.peekNext() != '*')) {
-		reader.next();
-		std::string text;
-		unsigned char nextByte;
-		while (reader.hasMore()) {
-		    auto c = reader.next();
-		    if (c == '*') {
-			if (reader.hasMore() && (reader.peekNext() == '/')) {
-			    reader.next();
-			    break;
-			}
-		    }
-		    text.append(1,c);
-		}
-		outSlab->slabType = quarry_Comment;
-		outSlab->line = reader.getLine();
-		outSlab->col = col;
-		outSlab->data = (unsigned char *)text.c_str();
-		outSlab->slabLength = text.length();
-		outSlab->slabMD = 1;
+		DoubleCharComment dcc('/','*','/');
+		return dcc.scan(reader, context);
 	    }
 	    else {
 		outSlab->slabType = quarry_Operator;
 		outSlab->line = reader.getLine();
 		outSlab->col = reader.getCol();
-		outSlab->data = new unsigned char[1];
-		outSlab->data[0] = c;
-		outSlab->slabLength = 1;
-		outSlab->slabMD = c;
+		outSlab->data = nullptr;
+		outSlab->slabLength = 0;
+		std::string op("/");
+		outSlab->slabMD = context.operatorIndex(op);
 	    }
 	    return outSlab;
 	}
@@ -200,9 +181,10 @@ namespace Quarry {
 	    auto c = reader.next();
 	    int col = reader.getCol();
 	    std::string text;
-	    while (reader.hasMore() && IS_IDENTIFIER_CHAR(reader.peekNext())) {
+	    while (reader.hasMore() && ('\n' != reader.peekNext())) {
 		text.append(1,reader.next());
 	    }
+	    
 	    outSlab->slabType = quarry_Identifier;
 	    outSlab->line = reader.getLine();
 	    outSlab->col = col;
@@ -220,7 +202,7 @@ namespace Quarry {
 	    auto c = reader.next();
 	    int col = reader.getCol();
 	    std::string text;
-	    while (reader.hasMore() && (reader.peekNext() != '\r') && (reader.peekNext() != '\n')) {
+	    while (reader.hasMore() && (IS_IDENTIFIER_CHAR(reader.peekNext()))) {
 		text.append(1,reader.next());
 	    }
 	    int i = context.keywordIndex(text);
@@ -246,6 +228,14 @@ namespace Quarry {
     class SchemeHashLexer : public BaseLexer {
     private:
 	quarry_SlabPtr scanBool(QReader &reader, QContext &context, bool b) const {
+	    reader.next();
+	    quarry_SlabPtr ret = new quarry_Slab();
+	    ret->line = reader.getLine();
+	    ret->col = reader.getCol();
+	    ret->slabLength = 0;
+	    ret->data = nullptr;
+	    ret->slabType = quarry_Bool;
+	    ret->slabMD = b ? 1 : 0;
 	    return nullptr;
 	}
 	quarry_SlabPtr scanChar(QReader &reader, QContext &context) const {
@@ -254,7 +244,9 @@ namespace Quarry {
 	    return nullptr;
 	}
 	quarry_SlabPtr scanComment(QReader &reader, QContext &context) const {
-	    return nullptr;
+	    DoubleCharComment comm('#','|','#');
+	    
+	    return comm.scan(reader,context);
 	}
     public:
 	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
