@@ -3,14 +3,15 @@
 #include <vector>
 #include <cstdio>
 #include <stack>
+#include "quarry_export.h"
 
 namespace Quarry {
-    class QReader{
+    QUARRY_EXPORT class QReader{
     private:
-	void read();
+	QUARRY_EXPORT void read();
     public:
-	QReader(const char *fileName);
-	QReader(const unsigned char *byteArray, size_t length, int l, int col);
+	QUARRY_EXPORT QReader(const char *fileName);
+	QUARRY_EXPORT QReader(const unsigned char *byteArray, size_t length, int l, int col);
 
 
 
@@ -40,7 +41,7 @@ namespace Quarry {
             
 	inline int getLine() { return line;}
 
-	~QReader();
+	QUARRY_EXPORT ~QReader();
     private:
 	bool isInMemory;
 	std::FILE *fp;

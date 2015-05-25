@@ -25,19 +25,19 @@ namespace Quarry {
     };
 
     
-    class BaseLexer {
+    QUARRY_EXPORT class BaseLexer {
     public:
 	BaseLexer(){}
 	virtual quarry_SlabPtr scan(QReader &reader, QContext &context) const = 0;
 	virtual ~BaseLexer(){}
     };
     
-    class QContext{
+    QUARRY_EXPORT class QContext{
     public:
 	friend void addPunctuationLexers (QContext &context);
 	friend void addGroupLexers (QContext &context) ;
 	friend void addWhitespaceLexers (QContext  &context);
-	QContext(enum PL i);
+	QUARRY_EXPORT QContext(enum PL i);
 
 	inline int keywordIndex(std::string &str) const {
 	    auto it = keywords.find(str);
@@ -59,12 +59,12 @@ namespace Quarry {
 	    return lexers[c];
 	}
 
-	~QContext();
+	QUARRY_EXPORT ~QContext();
     private:
 	std::map<std::string, int> keywords;
 	std::map<std::string, int> operators;
 	BaseLexer* lexers[256];
     };
 
-    BaseLexer* getDblCharCommentLexer(char b, char s, char e);
+    QUARRY_EXPORT BaseLexer* getDblCharCommentLexer(char b, char s, char e);
 }
