@@ -236,6 +236,7 @@ quarry_SlabPtr quarry_scan(quarry_Reader reader){
   int fileIn = 0;
   quarry_Scanner scanner;
   quarry_ScanResultPtr scanResult;
+  void *scannerData = NULL;
   
   slabPtr = (quarry_SlabPtr)malloc(sizeof(quarry_Slab));
   qreader = (QReaderPtr)reader;
@@ -253,7 +254,7 @@ quarry_SlabPtr quarry_scan(quarry_Reader reader){
       nextChar = Quarry_PeekNextInputChar(qreader->quarry);
       scanner = qreader->scanners[nextChar];
     }
-    scanResult = (*scanner)(qreader->quarry);
+    scanResult = (*scanner)(qreader->quarry, scannerData);
 
     if(NULL == scanResult){
       printf("\n  internal-error lexer returned NULL \n");
@@ -261,6 +262,7 @@ quarry_SlabPtr quarry_scan(quarry_Reader reader){
     }
 
     scanner = scanResult->nextScanner;
+    scannerData = scanResult->data;
     if( NULL ==  scanResult->nextScanner) {
       if (scanResult->result) {
 	goto RETSLAB;
