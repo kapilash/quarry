@@ -50,25 +50,11 @@ struct quarry_Quarry_
   qu_KWTablePtr kwTable;
   qu_KWTablePtr operTable;
 };
-typedef void *voidPtr;
-struct quarry_ScanResult_
-{
-  int result;
-  struct quarry_scanResult_ * (*nextScanner)(struct quarry_Quarry_ *,voidPtr);
-  void *data;
-};
-
-typedef struct quarry_ScanResult_ quarry_ScanResult;
-typedef struct quarry_ScanResult_ *quarry_ScanResultPtr;
-
-
 
 typedef struct quarry_Quarry_ quarry_Quarry;
 typedef struct quarry_Quarry_ *quarry_QuarryPtr;
 
 typedef int (*quarry_Lexer)(struct quarry_Quarry_ *, int);
-
-typedef struct quarry_ScanResult_ * (*quarry_Scanner)(struct quarry_Quarry_ *, void *);
 
 QUARRY_EXPORT
 quarry_QuarryPtr quarry_makeQuarry(unsigned char *buffer, int bufferSize);
@@ -82,7 +68,6 @@ void quarry_printSlab(quarry_SlabPtr slab);
 struct quarry_Reader_ {
   FILE *file;
   quarry_Lexer* lexers;
-  quarry_Scanner *scanners;
   quarry_QuarryPtr quarry;
 };
 
