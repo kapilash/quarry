@@ -54,7 +54,7 @@ typedef void *voidPtr;
 struct quarry_ScanResult_
 {
   int result;
-  struct quarry_scanResult_ * (*nextScanner)(quarry_QuarryPtr,voidPtr);
+  struct quarry_scanResult_ * (*nextScanner)(struct quarry_Quarry_ *,voidPtr);
   void *data;
 };
 
