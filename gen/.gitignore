@@ -7,3 +7,4 @@
 !.gitignore
 !CMakeLists.txt
 !verify.cpp
+!*.cs
