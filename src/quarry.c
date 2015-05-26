@@ -228,6 +228,63 @@ quarry_SlabPtr quarry_read(quarry_Reader reader){
   return slabPtr;
 }
 
+quarry_SlabPtr quarry_scan(quarry_Reader reader){
+  unsigned char nextChar;
+  QReaderPtr qreader;
+  quarry_SlabPtr slabPtr;
+  enum quarry_SlabType slabType;
+  int fileIn = 0;
+  quarry_Scanner scanner;
+  quarry_ScanResultPtr scanResult;
+  
+  slabPtr = (quarry_SlabPtr)malloc(sizeof(quarry_Slab));
+  qreader = (QReaderPtr)reader;
+  qreader->quarry->holder.length = 0;
+
+  if(!Quarry_HasMore(qreader->quarry)){
+    if(!fillQuarryInput(qreader,slabPtr)){
+      goto RETSLAB;
+    }
+  }
+
+  scanner = NULL;
+  while(1){
+    if(scanner == NULL){
+      nextChar = Quarry_PeekNextInputChar(qreader->quarry);
+      scanner = qreader->scanners[nextChar];
+    }
+    scanResult = (*scanner)(qreader->quarry);
+
+    if(NULL == scanResult){
+      printf("\n  internal-error lexer returned NULL \n");
+      return NULL;
+    }
+
+    scanner = scanResult->nextScanner;
+    if( NULL ==  scanResult->nextScanner) {
+      if (scanResult->result) {
+	goto RETSLAB;
+      }
+      slabPtr->slabType = quarry_Error;
+      goto RETSLAB;
+    }
+    free(scanResult);
+    if(!Quarry_HasMore(qreader->quarry)) {
+      if(!fillQuarryInput(qreader,slabPtr)){
+	goto RETSLAB;
+      } 
+    }
+  }  
+
+ RETSLAB:
+  slabPtr->slabMD = qreader->quarry->holder.md;
+  slabPtr->data = qreader->quarry->holder.data;
+  slabPtr->slabLength  = qreader->quarry->holder.length;
+  slabPtr->line = qreader->quarry->line;
+  slabPtr->col = qreader->quarry->col;
+  return slabPtr;
+}
+
 void quarry_freeSlab(quarry_SlabPtr slab){
   free(slab);
 }

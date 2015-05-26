@@ -65,6 +65,9 @@ QUARRY_EXPORT
 quarry_SlabPtr quarry_read(quarry_Reader reader);
 
 QUARRY_EXPORT
+quarry_SlabPtr quarry_scan(quarry_Reader reader);
+
+QUARRY_EXPORT
 void quarry_freeSlab(quarry_SlabPtr slab);
 
 QUARRY_EXPORT
