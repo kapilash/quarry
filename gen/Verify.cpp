@@ -1,4 +1,5 @@
-#define BOOST_TEST_MODULE keywords_verify test
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE keywords_verify 
 #include <boost/test/unit_test.hpp>
 #include <fstream>
 #include <string>

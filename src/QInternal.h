@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <set>
 #include "QReader.h"
 #include "quarry.h"
 
@@ -47,7 +48,7 @@ namespace Quarry {
 	    return it->second;
 	}
 	
-	int operatorIndex(std::string &str) const {
+	inline int operatorIndex(std::string &str) const {
 	    auto it = keywords.find(str);
 	    if (it == keywords.end()) {
 		return -1;

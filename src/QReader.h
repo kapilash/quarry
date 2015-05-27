@@ -1,8 +1,7 @@
 #pragma once
 
-#include <vector>
-#include <cstdio>
-#include <stack>
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <iostream>
 #include "quarry_export.h"
 
 namespace Quarry {
@@ -16,25 +15,21 @@ namespace Quarry {
 
 
 	inline bool hasMore()  {
-	    if (bytes.empty()) {
-		read();
-	    }
-	    return !(bytes.empty());
+	  return (position < length);
 	}
             
 	inline unsigned char peekNext() const{
-	    return bytes.top();
+	    return bytes[position];
 	}
             
 	inline unsigned char next() {
-	    unsigned char n = bytes.top();
-	    bytes.pop();
-	    ++column;
-	    if (n == '\n') {
-		++line;
-		column = 0;
-	    }
-	    return n;
+	  position++;
+	  column++;
+	  if (bytes[position] == '\n') {
+	    ++line;
+	    column = 0;
+	  }
+	  return bytes[position];
 	}
             
 	inline int getCol() { return column;}
@@ -43,11 +38,10 @@ namespace Quarry {
 
 	QUARRY_EXPORT ~QReader();
     private:
-	bool isInMemory;
-	std::FILE *fp;
-
-	std::stack<unsigned char> bytes;
-	
+	boost::iostreams::mapped_file_source file;
+	unsigned char *bytes;
+	std::size_t length;
+	std::size_t position;
 	int line;
 	int column;
     };

@@ -1,3 +1,4 @@
+#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE comments_test test
 #include <boost/test/unit_test.hpp>
 
@@ -27,12 +28,12 @@ static void createFile(const char *fileName, const std::string &str, char begin,
 	line++;
     }
     commentsFile << second << end ;
-    commentsFile << "some random data";
+    commentsFile << "XXXXXXXXXX";
 }
 BOOST_AUTO_TEST_CASE (simpleBlockComment)
 {
     std::string str = std::string("abcdefghijklmnopqrstuvwxyz1234567890A");
-    const char *testFile = "comments.txt";
+    const char *testFile = "comments1.txt";
     createFile(testFile, str, '/','*','/');
 
     Quarry::QReader qr(testFile);
@@ -48,14 +49,19 @@ BOOST_AUTO_TEST_CASE (simpleBlockComment)
     BOOST_CHECK(qr.getLine() == slab->line);
     BOOST_CHECK(qr.getCol() == slab->col);
     BOOST_CHECK(slab->slabType == quarry_Comment);
-    BOOST_CHECK(slab->slabLength == (str.length() * 101));
+    BOOST_CHECK(slab->slabLength == 0);
+    std::string leftOver;
+    while(qr.hasMore()) {
+      leftOver.append(1, qr.next());
+    }
+    BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
     std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE (schemeBlockComment)
 {
     std::string str = std::string("abcdefghijklmnopqrstuvwxyz1234567890A");
-    const char *testFile = "comments.txt";
+    const char *testFile = "comments2.txt";
     createFile(testFile, str, '#','|','#');
 
     Quarry::QReader qr(testFile);
@@ -71,14 +77,20 @@ BOOST_AUTO_TEST_CASE (schemeBlockComment)
     BOOST_CHECK(qr.getLine() == slab->line);
     BOOST_CHECK(qr.getCol() == slab->col);
     BOOST_CHECK(slab->slabType == quarry_Comment);
-    BOOST_CHECK(slab->slabLength == (str.length() * 101));
+    BOOST_CHECK(slab->slabLength == 0);
+    std::string leftOver;
+    while(qr.hasMore()) {
+      leftOver.append(1, qr.next());
+    }
+    BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
+
     std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE (nestedBlockComment)
 {
-    std::string str = std::string("abcdefghi#|jklm#|n|#o|#pqrstuvwxyz1234567890A");
-    const char *testFile = "comments.txt";
+    std::string str = std::string("abcdefghi#|jklm#|n|#oo|#pqrstuvwxyz1234567890A");
+    const char *testFile = "comments3.txt";
     createFile(testFile, str, '#','|','#');
 
     Quarry::QReader qr(testFile);
@@ -93,6 +105,12 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
     auto slab = lexer->scan(qr, context);
     BOOST_CHECK(slab != nullptr);
     BOOST_CHECK(qr.getCol() == slab->col);
-    BOOST_CHECK(slab->slabLength == expLength);
+    BOOST_CHECK(slab->slabLength == 0);
+    std::string leftOver;
+    while(qr.hasMore()) {
+      leftOver.append(1, qr.next());
+    }
+    BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
+
     std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
 }

@@ -12,6 +12,7 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include "QInternal.h"
 #include <string>
 #include <cstring>
+#include <vector>
 /*
  *Using FNV1-a hash from http://www.isthe.com/chongo/tech/comp/fnv
  *Copied the code from the same as is, as it was described to be a public domain work
@@ -35,6 +36,18 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 
 namespace Quarry {
+
+  static void fillToken(quarry_SlabPtr pointer, std::vector<unsigned char> &tokenText)
+  {
+    pointer->slabLength = tokenText.size();
+    if(tokenText.size() > 0) {
+      pointer->data = new unsigned char[tokenText.size()];
+      std::copy(tokenText.begin(), tokenText.end(), pointer->data);
+    }
+    else{
+      pointer->data = nullptr;
+    }
+  }
     class SingleCharLexer : public BaseLexer {
     private:
 	const char c;
@@ -96,11 +109,10 @@ namespace Quarry {
 	
 	DoubleCharComment(char b, char s, char l):begin(b), second(s), last(l) {}
 	
-	// This assumes that, when it is called, we Peek points to the second char
+	// This assumes that, when it is called, current characetr is at the second char
 	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
 	    quarry_SlabPtr outSlab = new quarry_Slab();
 	    reader.next();
-	    std::string text;
 	    unsigned char nextByte; //we read the second char
 	    int count = 1;
 	    
@@ -112,24 +124,21 @@ namespace Quarry {
 			count--;
 			if (count < 1)
 			    break;
-			text.append(1,last);
 		    }
 		}
 		else if (c == begin) {
 		    if (reader.hasMore() && reader.peekNext() == second) {
 			reader.next();
-			text.append(1,begin);
 			c = second;
 			count++;
 		    }
 		}
-		text.append(1,c);
 	    }
 	    outSlab->slabType = quarry_Comment;
 	    outSlab->line = reader.getLine();
 	    outSlab->col = reader.getCol();
-	    outSlab->data = (unsigned char *)text.c_str();
-	    outSlab->slabLength = text.length();
+	    outSlab->data = nullptr;
+	    outSlab->slabLength = 0;
 	    outSlab->slabMD = 1;
 	    return outSlab;
 	}
@@ -143,16 +152,14 @@ namespace Quarry {
 	    if (reader.hasMore() && (reader.peekNext() == '/') ) {
 		reader.next();
 		unsigned char nextByte;
-		std::string text;
 		while (reader.hasMore() && (reader.peekNext() != '\n')) {
-		    nextByte = reader.next();
-			text.append(1,nextByte);
+		  reader.next();
 		}
 		outSlab->slabType = quarry_Comment;
 		outSlab->line = reader.getLine();
 		outSlab->col = col;
-		outSlab->data = (unsigned char*)text.c_str();
-		outSlab->slabLength = text.length();
+		outSlab->data = nullptr;
+		outSlab->slabLength = 0;
 		outSlab->slabMD = 0;
 		reader.next(); // consume the new line
 	    }
@@ -180,16 +187,15 @@ namespace Quarry {
 	    quarry_SlabPtr outSlab = new quarry_Slab();
 	    auto c = reader.next();
 	    int col = reader.getCol();
-	    std::string text;
+	    std::vector<unsigned char> text;
 	    while (reader.hasMore() && ('\n' != reader.peekNext())) {
-		text.append(1,reader.next());
+		text.push_back(reader.next());
 	    }
 	    
 	    outSlab->slabType = quarry_Identifier;
 	    outSlab->line = reader.getLine();
 	    outSlab->col = col;
-	    outSlab->data = (unsigned char *)text.c_str();
-	    outSlab->slabLength = text.length();
+	    fillToken(outSlab, text);
 	    outSlab->slabMD = 0;
 	    return outSlab;
 	}
@@ -201,17 +207,19 @@ namespace Quarry {
 	    quarry_SlabPtr outSlab = new quarry_Slab();
 	    auto c = reader.next();
 	    int col = reader.getCol();
-	    std::string text;
+	    std::vector<unsigned char> text;
+	    std::string t;
 	    while (reader.hasMore() && (IS_IDENTIFIER_CHAR(reader.peekNext()))) {
-		text.append(1,reader.next());
+	      c = reader.next();
+	      text.push_back(c);
+	      t.append(1,c);
 	    }
-	    int i = context.keywordIndex(text);
+	    int i = context.keywordIndex(t);
 	    outSlab->line = reader.getLine();
 	    outSlab->col = col;
 	    if (i < 0) {
 		outSlab->slabType = quarry_Identifier;
-		outSlab->data = (unsigned char *)text.c_str();
-		outSlab->slabLength = text.length();
+		fillToken(outSlab, text);
 		outSlab->slabMD = 0;
 		return outSlab;
 	    }
@@ -240,7 +248,16 @@ namespace Quarry {
 	}
 	quarry_SlabPtr scanChar(QReader &reader, QContext &context) const {
 	    reader.next();
-	    
+	    quarry_SlabPtr ret = new quarry_Slab();
+	    ret->line = reader.getLine();
+	    ret->col = reader.getCol() - 2;
+	    std::vector<unsigned char> tokenText;
+	    while(!IS_SCHEME_DELIMITER(reader.peekNext())) {
+	      tokenText.push_back(reader.next());
+	    }
+	    ret->slabType = quarry_Char;
+	    fillToken(ret, tokenText);
+	    ret->slabMD = 0;
 	    return nullptr;
 	}
 	quarry_SlabPtr scanComment(QReader &reader, QContext &context) const {

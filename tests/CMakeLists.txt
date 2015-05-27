@@ -8,4 +8,5 @@ add_executable(rtests "rtests.cpp")
 add_executable(comments "CommentsTest.cpp")
 
 target_link_libraries(rtests quarry ${Boost_LIBRARIES})
+
 target_link_libraries(comments quarry ${Boost_LIBRARIES})
