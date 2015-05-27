@@ -23,13 +23,14 @@ namespace Quarry {
 	}
             
 	inline unsigned char next() {
-	  position++;
-	  column++;
-	  if (bytes[position] == '\n') {
-	    ++line;
-	    column = 0;
+	    unsigned char c = bytes[position];
+	    position++;
+	    column++;
+	  if (c == '\n') {
+	      ++line;
+	      column = 0;
 	  }
-	  return bytes[position];
+	  return c;
 	}
             
 	inline int getCol() { return column;}
@@ -39,7 +40,8 @@ namespace Quarry {
 	QUARRY_EXPORT ~QReader();
     private:
 	boost::iostreams::mapped_file_source file;
-	unsigned char *bytes;
+	bool isInMemory;
+	const unsigned char *bytes;
 	std::size_t length;
 	std::size_t position;
 	int line;

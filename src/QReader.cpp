@@ -25,15 +25,18 @@ namespace Quarry {
       column = 1;
       position = 0;
       length = file.size();
+      bytes = reinterpret_cast<const unsigned char *>(file.data());
+      isInMemory = false;
     }
 
     QReader::QReader(const unsigned char *byteArray, size_t arrayLength, int l = 1, int c = 1){
 	bytes = new unsigned char[BUFSIZ];
-	std::memcpy(bytes, byteArray, arrayLength);
+	std::memcpy((void *)bytes, byteArray, arrayLength);
         line = l; 
         column = c;
 	position = 0;
 	length = arrayLength;
+	isInMemory = true;
     }
     
     QReader::~QReader() {
@@ -42,7 +45,8 @@ namespace Quarry {
       }
       line = 0;
       column = 0;
-      delete []bytes;
       position = 0;
+      if (isInMemory)
+	  delete []bytes;
     }
 }

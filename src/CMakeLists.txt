@@ -15,7 +15,7 @@ set (SOURCES
 add_library(quarry SHARED   ${SOURCES})
 
 GENERATE_EXPORT_HEADER(quarry)
-#target_link_libraries(quarry ${Boost_LIBRARIES})
+target_link_libraries(quarry ${Boost_LIBRARIES})
 
 #add_executable(qexample "exquarry.c")
 

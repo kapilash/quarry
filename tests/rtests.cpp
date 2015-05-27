@@ -3,6 +3,7 @@
 
 #include "QReader.h"
 #include <cstring>
+#include <iostream>
 BOOST_AUTO_TEST_CASE (simple_string)
 {
     const char *str = "hello world";
