@@ -42,8 +42,13 @@ int quarry_commentLexer(quarry_QuarryPtr quarry, int lexerState){
       quarry->holder.length = 0;      
       goto LINE_COMMENT;
     }
-    if(nextChar != 42)
-      goto ONLY_FWD_SLASH;
+    if(nextChar != 42){
+	  Quarry_UnRead(quarry);
+	  quarry->slabType = quarry_Operator;
+	  Quarry_AppendSingleChar(quarry,47);
+	  return 0;
+    }
+    
     goto THIRD_CHAR;
   case 2:
     Quarry_AppendNext(quarry,nextChar)
@@ -51,7 +56,7 @@ int quarry_commentLexer(quarry_QuarryPtr quarry, int lexerState){
   case 3:
     if(nextChar == 47){
       (quarry->holder.length)--;
-      goto RETURN_COMMENT_END;
+      quarry->slabType = quarry_Comment;  return 0;
     }else{
       Quarry_AppendNext(quarry,nextChar);
       goto CONSUME_COMMENTS;
@@ -87,7 +92,8 @@ int quarry_commentLexer(quarry_QuarryPtr quarry, int lexerState){
     if(nextChar == 47){
       if (42 == Quarry_LastRead(quarry)) {
 	  quarry->holder.length = quarry->holder.length - 1;
-	  goto RETURN_COMMENT_END;
+	  quarry->slabType = quarry_Comment;
+	  return 0;
       }
       Quarry_AppendNext(quarry,47)
     }else{
@@ -104,15 +110,7 @@ int quarry_commentLexer(quarry_QuarryPtr quarry, int lexerState){
     return 3;
   else
     return 2;
- RETURN_COMMENT_END:
-  quarry->slabType = quarry_Comment;
-  return 0;
- ONLY_FWD_SLASH:
-  /* it was only a forward slash not followed by a '*' */
-  Quarry_UnRead(quarry);
-  quarry->slabType = quarry_Operator;
-  Quarry_AppendSingleChar(quarry,47)
-  return 0;
+
  LINE_COMMENT:
   quarry->holder.md = 1;
   while Quarry_HasMore(quarry){

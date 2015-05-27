@@ -28,13 +28,68 @@ static int fillQuarryInput(QReaderPtr reader,quarry_SlabPtr slab) {
     reader->quarry->input.length = fread(reader->quarry->input.data,sizeof(unsigned char),QRY_BUFFER_SIZE,reader->file);
     reader->quarry->input.index = 0;
     if(!ferror(reader->file)){
-	return 1;
+	return Quarry_HasMore(reader->quarry);
     }
     fputs("error reading file\n",stderr);
     reader->quarry->input.length = 0;
     slab->slabType = quarry_Error;
     return 0;
 }
+/*
+static void skipBlockComments(unsigned char begin, unsigned char second, unsigned char last, QReaderPtr reader) {
+     int count = 1;
+     unsigned nextChar;
+
+     if(!Quarry_HasMore(reader->quarry)){
+	 if(feof(reader->file)) {
+	     return;
+	 }
+	 
+	 reader->quarry->input.length = fread(reader->quarry->input.data,sizeof(unsigned char),QRY_BUFFER_SIZE,reader->file);
+	 if(ferror(reader->file)) {
+	     return;
+	 }	 
+	 if(!Quarry_HasMore(reader->quarry)) {
+	     return;
+	 }
+     }
+     if(Quarry_PeekNextInputChar(reader->quarry) != begin) {
+	 return;
+     }
+     
+     Quarry_ReadNext(reader->quarry, nextChar);
+     if(!Quarry_HasMore(reader->quarry)){
+	 //  We've read a character.
+	 // Buffer ended here. Now check if the file ended here. It means, the last character in the file was '/'.
+	 // We will have to unread the char and return.
+	 if (feof(reader->file)) {
+	     Quarry_UnRead(reader->quarry);
+	 }
+
+	 
+	 reader->quarry->input.data[0] = nextChar;
+
+	 // put the character as the first element
+	 reader->quarry->input.index = 1;
+	 reader->quarry->input.length = fread(&(reader->quarry->input.data[1]), sizeof(unsigned char), QRY_BUFFER_SIZE - 1, reader->file);
+	 if(ferror(reader->file)) {
+	     Quarry_UnRead(reader->quarry);
+	     return;
+	 }	 
+
+	 if(!Quarry_HasMore(reader->quarry)) {
+	     Quarry_UnRead(reader->quarry);
+	     return;
+	 }
+	 
+	 if(Quarry_PeekNextInputChar(reader->quarry) != second) {
+	     Quarry_UnRead(reader->quarry);
+	     return;
+	 }
+     }
+     Quarry_ReadNext(reader->quarry, nextChar);
+}
+*/
 
 static void addCLexers(QReaderPtr reader){
   reader->lexers['#'] = &quarry_metaIdLexer;
