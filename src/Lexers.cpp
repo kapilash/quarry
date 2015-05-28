@@ -233,7 +233,7 @@ namespace Quarry {
 	}
     };
 
-    class SchemeHashLexer : public BaseLexer {
+  /*    class SchemeHashLexer : public BaseLexer {
     private:
 	const std::map<std::string, unsigned int> nameValueMap = {
 	    {std::string("alarm"),   7},
@@ -313,7 +313,7 @@ namespace Quarry {
 	    }
 	    return nullptr;
 	}
-    };
+	}; */
     class CCharLexer : public BaseLexer {
     public:
 	quarry_SlabPtr scan(QReader &reader, QContext &context) const {

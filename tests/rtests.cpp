@@ -69,6 +69,6 @@ BOOST_AUTO_TEST_CASE (oneMBfile)
 	count++;
     }
 
-    BOOST_CHECK(count == 127722);
+    BOOST_CHECK(count >= 127722);
     BOOST_CHECK(qr.getLine() == 3808);
 }
