@@ -13,6 +13,7 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #define __QUARRY__
 #include <sys/types.h>
 #include <stdint.h>
+#include "quarry_export.h"
 
 typedef uint32_t u_int32_t;
 
@@ -47,7 +48,7 @@ struct quarry_Slab_
 typedef struct quarry_Slab_ quarry_Slab;
 typedef struct quarry_Slab_ *quarry_SlabPtr;
 
-enum quarry_PL_{
+enum  quarry_PL_{
   quarry_Gen,
   quarry_C,
   quarry_Java
@@ -57,12 +58,16 @@ typedef enum quarry_PL_ quarry_PL;
 
 typedef void *quarry_Reader;
 
+QUARRY_EXPORT
 quarry_Reader quarry_newReader(const char *fileName, quarry_PL pl);
 
+QUARRY_EXPORT
 quarry_SlabPtr quarry_read(quarry_Reader reader);
 
+QUARRY_EXPORT
 void quarry_freeSlab(quarry_SlabPtr slab);
 
+QUARRY_EXPORT
 void quarry_closeReader(quarry_Reader reader);
 
 

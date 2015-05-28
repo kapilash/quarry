@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include "QReader.h"
+#include "quarry.h"
 
 namespace Quarry {
     enum PL {
@@ -10,17 +11,32 @@ namespace Quarry {
 	JAVA,
 	R5RS_Scheme
     };
+
     class QContext;
+    class BaseLexer;
+
+    class QResult {
+	
+    public:
+	BaseLexer * const lexer;
+	struct quarry_Slab_ *const slab;
+    QResult(BaseLexer *l) : lexer(l),slab(nullptr) {}
+    QResult(struct quarry_Slab_ *s) :slab(s), lexer(nullptr) {}
+    };
+
     
     class BaseLexer {
     public:
 	BaseLexer(){}
-	virtual BaseLexer* scan(QReader &reader, QContext &context) = 0;
+	virtual quarry_SlabPtr scan(QReader &reader, QContext &context) const = 0;
 	virtual ~BaseLexer(){}
     };
     
     class QContext{
     public:
+	friend void addPunctuationLexers (QContext &context);
+	friend void addGroupLexers (QContext &context) ;
+	friend void addWhitespaceLexers (QContext  &context);
 	QContext(enum PL i);
 
 	inline int keywordIndex(std::string &str) const {

@@ -56,6 +56,7 @@ int quarry_punctuation(quarry_QuarryPtr quarry, int lexerState){
   quarry->slabType = quarry_Punctuation;
   Quarry_ReadNext(quarry,nextChar)
   Quarry_AppendSingleChar(quarry,nextChar)
+  quarry->holder.md = nextChar;
   return 0;
 }
 
@@ -94,14 +95,16 @@ int quarry_groupLexer(quarry_QuarryPtr quarry, int lexerState){
   quarry->slabType = quarry_Grouping;
   Quarry_ReadNext(quarry,nextChar)
   Quarry_AppendSingleChar(quarry,nextChar)
+  quarry->holder.md = nextChar;
   return 0;
 }
 
 int quarry_wsLexer(quarry_QuarryPtr quarry, int lexerState){
   unsigned char nextChar;
   quarry->slabType = quarry_Whitespace;
-  Quarry_ReadNext(quarry,nextChar)
-  Quarry_AppendSingleChar(quarry,nextChar)
+  Quarry_ReadNext(quarry,nextChar);
+  Quarry_AppendSingleChar(quarry,nextChar);
+  quarry->holder.md = nextChar;
   return 0;
 }
 
@@ -110,7 +113,8 @@ int quarry_lfLexer(quarry_QuarryPtr quarry, int lexerState){
   quarry->slabType = quarry_NewLine;
   Quarry_ReadNext(quarry,nextChar);
   Quarry_AppendSingleChar(quarry,nextChar);
-  Quarry_IncrLine(quarry); 
+  Quarry_IncrLine(quarry);
+  quarry->holder.md = nextChar;
   return 0;
 }
 int quarry_crlfLexer(quarry_QuarryPtr quarry, int lexerState){
