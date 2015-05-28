@@ -56,7 +56,7 @@ namespace Quarry {
 	    return it->second;
 	}
 	
-	inline BaseLexer* lexer(unsigned char c) const {
+	QUARRY_EXPORT inline BaseLexer* lexer(unsigned char c) const {
 	    return lexers[c];
 	}
 
@@ -67,5 +67,69 @@ namespace Quarry {
 	BaseLexer* lexers[256];
     };
 
+    class DelimitedLexer : public BaseLexer {
+	const char delimiter;
+	const char escape;
+	const quarry_SlabType tokenType;
+    public:
+        QUARRY_EXPORT DelimitedLexer(char delim, char esc, quarry_SlabType t) :delimiter(delim), escape(esc), tokenType(t) {} 
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
+
+    class CIdentifier : public BaseLexer {
+    public:
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
+
+    class DoubleCharComment : public BaseLexer {
+    private:
+	const char begin;
+	const char second;
+	const char last;
+    public:
+	QUARRY_EXPORT DoubleCharComment(char b, char s, char l):begin(b), second(s), last(l) {}
+	
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
+
+    class CLikeComment : public BaseLexer {
+    public:
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
+
+    class SingleCharLexer : public BaseLexer {
+    private:
+	const char c;
+	const enum quarry_SlabType slabType;
+	
+    public:
+	QUARRY_EXPORT SingleCharLexer(char given, enum quarry_SlabType givenSlabType) : c(given), slabType(givenSlabType) {}
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const ;
+    };
+
+    class LFLexer : public SingleCharLexer {
+    public :
+	QUARRY_EXPORT LFLexer(char g = '\n', enum quarry_SlabType gst = quarry_NewLine) : SingleCharLexer (g, gst) {}
+	
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const ;
+    };
+
+    class CRLexer : public BaseLexer {
+    public:
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const ;
+    };
+
+    class NumberLexer : public BaseLexer {
+	
+    public:
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
+
+    class OperatorLexer : public BaseLexer {
+	const std::string allowed;
+    public:
+	QUARRY_EXPORT OperatorLexer(std::string operChars) : allowed(operChars) {}
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
     QUARRY_EXPORT BaseLexer* getDblCharCommentLexer(char b, char s, char e);
 }

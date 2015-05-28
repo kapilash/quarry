@@ -48,137 +48,108 @@ namespace Quarry {
       pointer->data = nullptr;
     }
   }
-    class SingleCharLexer : public BaseLexer {
-    private:
-	const char c;
-	const enum quarry_SlabType slabType;
-	
-    public:
-	SingleCharLexer(char given, enum quarry_SlabType givenSlabType) : c(given), slabType(givenSlabType) {}
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    quarry_SlabPtr outSlab = new quarry_Slab();
-	    unsigned char c = reader.next();
-	    outSlab->slabType = slabType;
-	    outSlab->line = reader.getLine();
-	    outSlab->col = reader.getCol();
-	    outSlab->data = nullptr;
-	    outSlab->slabLength = 0;
-	    outSlab->slabMD = c;
-	    return outSlab;
-	}
-    };
+    quarry_SlabPtr SingleCharLexer :: scan(QReader &reader, QContext &context) const {
+	quarry_SlabPtr outSlab = new quarry_Slab();
+	unsigned char c = reader.next();
+	outSlab->slabType = slabType;
+	outSlab->line = reader.getLine();
+	outSlab->col = reader.getCol();
+	outSlab->data = nullptr;
+	outSlab->slabLength = 0;
+	outSlab->slabMD = c;
+	return outSlab;
+    }
 
-    class LFLexer : public SingleCharLexer {
-    public :
-	LFLexer(char g = '\n', enum quarry_SlabType gst = quarry_NewLine) : SingleCharLexer (g, gst) {}
-	
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    auto ret = SingleCharLexer::scan(reader, context);
-	    return ret;
-	}
-    };
 
-    class CRLexer : public BaseLexer {
-    public:
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    quarry_SlabPtr outSlab = new quarry_Slab();
-	    unsigned char c = reader.next();
-	    bool crlf = false;
+    quarry_SlabPtr LFLexer :: scan(QReader &reader, QContext &context) const {
+	auto ret = SingleCharLexer::scan(reader, context);
+	return ret;
+    }
 
-	    if (reader.hasMore() && (reader.peekNext() == '\n')) {
-		reader.next();
-		crlf = true;
-	    }
-	   
-	    outSlab->slabType = quarry_NewLine;
-	    outSlab->line = reader.getLine();
-	    outSlab->col = reader.getCol();
-	    outSlab->data = nullptr;
-	    outSlab->slabLength = 0;
-	    outSlab->slabMD = crlf;
-	    return outSlab;
-	}
-    };
-
-    class DoubleCharComment : public BaseLexer {
-    private:
-	const char begin;
-	const char second;
-	const char last;
-    public:
-	
-	DoubleCharComment(char b, char s, char l):begin(b), second(s), last(l) {}
-	
-	// This assumes that, when it is called, current characetr is at the second char
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    quarry_SlabPtr outSlab = new quarry_Slab();
+    quarry_SlabPtr CRLexer :: scan(QReader &reader, QContext &context) const {
+	quarry_SlabPtr outSlab = new quarry_Slab();
+	unsigned char c = reader.next();
+	bool crlf = false;
+	if (reader.hasMore() && (reader.peekNext() == '\n')) {
 	    reader.next();
-	    unsigned char nextByte; //we read the second char
-	    int count = 1;
-	    
-	    while (reader.hasMore()) {
-		auto c = reader.next();
-		if (c == second) {
-		    if (reader.hasMore() && (reader.peekNext() == last)) {
-			reader.next();
-			count--;
-			if (count < 1)
-			    break;
-		    }
+	    crlf = true;
+	}
+	   
+	outSlab->slabType = quarry_NewLine;
+	outSlab->line = reader.getLine();
+	outSlab->col = reader.getCol();
+	outSlab->data = nullptr;
+	outSlab->slabLength = 0;
+	outSlab->slabMD = crlf;
+	return outSlab;
+    }
+
+    quarry_SlabPtr DoubleCharComment::scan(QReader &reader, QContext &context) const {
+	quarry_SlabPtr outSlab = new quarry_Slab();
+	reader.next();
+	unsigned char nextByte; //we read the second char
+	int count = 1;
+	
+	while (reader.hasMore()) {
+	    auto c = reader.next();
+	    if (c == second) {
+		if (reader.hasMore() && (reader.peekNext() == last)) {
+		    reader.next();
+		    count--;
+		    if (count < 1)
+			break;
 		}
-		else if (c == begin) {
-		    if (reader.hasMore() && reader.peekNext() == second) {
-			reader.next();
-			c = second;
-			count++;
-		    }
+	    }
+	    else if (c == begin) {
+		if (reader.hasMore() && reader.peekNext() == second) {
+		    reader.next();
+		    c = second;
+		    count++;
 		}
+	    }
+	}
+	outSlab->slabType = quarry_Comment;
+	outSlab->line = reader.getLine();
+	outSlab->col = reader.getCol();
+	outSlab->data = nullptr;
+	outSlab->slabLength = 0;
+	outSlab->slabMD = 1;
+	return outSlab;
+    }
+
+    quarry_SlabPtr CLikeComment::scan(QReader &reader, QContext &context) const {
+	quarry_SlabPtr outSlab = new quarry_Slab();
+	auto c = reader.next();
+	int col = reader.getCol();
+	if (reader.hasMore() && (reader.peekNext() == '/') ) {
+	    reader.next();
+	    unsigned char nextByte;
+	    while (reader.hasMore() && (reader.peekNext() != '\n')) {
+		reader.next();
 	    }
 	    outSlab->slabType = quarry_Comment;
 	    outSlab->line = reader.getLine();
+	    outSlab->col = col;
+	    outSlab->data = nullptr;
+	    outSlab->slabLength = 0;
+	    outSlab->slabMD = 0;
+	    reader.next(); // consume the new line
+	}
+	else if (reader.hasMore() && (reader.peekNext() != '*')) {
+	    DoubleCharComment dcc('/','*','/');
+	    return dcc.scan(reader, context);
+	}
+	else {
+	    outSlab->slabType = quarry_Operator;
+	    outSlab->line = reader.getLine();
 	    outSlab->col = reader.getCol();
 	    outSlab->data = nullptr;
 	    outSlab->slabLength = 0;
-	    outSlab->slabMD = 1;
-	    return outSlab;
+	    std::string op("/");
+	    outSlab->slabMD = context.operatorIndex(op);
 	}
-    };
-    class CLikeComment : public BaseLexer {
-    public:
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    quarry_SlabPtr outSlab = new quarry_Slab();
-	    auto c = reader.next();
-	    int col = reader.getCol();
-	    if (reader.hasMore() && (reader.peekNext() == '/') ) {
-		reader.next();
-		unsigned char nextByte;
-		while (reader.hasMore() && (reader.peekNext() != '\n')) {
-		  reader.next();
-		}
-		outSlab->slabType = quarry_Comment;
-		outSlab->line = reader.getLine();
-		outSlab->col = col;
-		outSlab->data = nullptr;
-		outSlab->slabLength = 0;
-		outSlab->slabMD = 0;
-		reader.next(); // consume the new line
-	    }
-	    else if (reader.hasMore() && (reader.peekNext() != '*')) {
-		DoubleCharComment dcc('/','*','/');
-		return dcc.scan(reader, context);
-	    }
-	    else {
-		outSlab->slabType = quarry_Operator;
-		outSlab->line = reader.getLine();
-		outSlab->col = reader.getCol();
-		outSlab->data = nullptr;
-		outSlab->slabLength = 0;
-		std::string op("/");
-		outSlab->slabMD = context.operatorIndex(op);
-	    }
-	    return outSlab;
-	}
-    };
+	return outSlab;
+    }
 
     class SingleCharComment : public BaseLexer {
 	
@@ -201,37 +172,38 @@ namespace Quarry {
 	}
     };
 
-    class CIdentifier : public BaseLexer {
-    public:
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    quarry_SlabPtr outSlab = new quarry_Slab();
-	    auto c = reader.next();
-	    int col = reader.getCol();
-	    std::vector<unsigned char> text;
-	    std::string t;
-	    while (reader.hasMore() && (IS_IDENTIFIER_CHAR(reader.peekNext()))) {
-	      c = reader.next();
-	      text.push_back(c);
-	      t.append(1,c);
-	    }
-	    int i = context.keywordIndex(t);
-	    outSlab->line = reader.getLine();
-	    outSlab->col = col;
-	    if (i < 0) {
-		outSlab->slabType = quarry_Identifier;
-		fillToken(outSlab, text);
-		outSlab->slabMD = 0;
-		return outSlab;
-	    }
-	    else {
-		outSlab->slabType = quarry_Keyword;
-		outSlab->data = nullptr;
-		outSlab->slabLength = 0;
-		outSlab->slabMD = i;
-		return outSlab;
-	    }
+    quarry_SlabPtr CIdentifier :: scan(QReader &reader, QContext &context) const {
+	quarry_SlabPtr outSlab = new quarry_Slab();
+	auto c = reader.next();
+	int col = reader.getCol();
+	std::vector<unsigned char> text;
+	std::string t;
+	unsigned long hval = FNV1A_32_INIT ;
+	
+	while (reader.hasMore() && (IS_IDENTIFIER_CHAR(reader.peekNext()))) {
+	    c = reader.next();
+	    text.push_back(c);
+	    t.append(1,c);
+	    hval ^= (unsigned long)c;
+	    hval *= FNV_32_PRIME;
 	}
-    };
+	int i = context.keywordIndex(t);
+	outSlab->line = reader.getLine();
+	outSlab->col = col;
+	if (i < 0) {
+	    outSlab->slabType = quarry_Identifier;
+	    fillToken(outSlab, text);
+	    outSlab->slabMD = hval;
+	    return outSlab;
+	}
+	else {
+	    outSlab->slabType = quarry_Keyword;
+	    outSlab->data = nullptr;
+	    outSlab->slabLength = 0;
+	    outSlab->slabMD = i;
+	    return outSlab;
+	}
+    }
 
   /*    class SchemeHashLexer : public BaseLexer {
     private:
@@ -314,53 +286,181 @@ namespace Quarry {
 	    return nullptr;
 	}
 	}; */
-    class CCharLexer : public BaseLexer {
-    public:
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    quarry_SlabPtr outSlab = new quarry_Slab();
-	    reader.next();
-	    int col = reader.getCol();
-	    std::string text;
-	    if (reader.hasMore()) {
-		auto c = reader.next();
-		if (c == '\'') {
-		    //return error
-		}
-		else if (c == '\\') {
-		    if (reader.hasMore()) {
-			//append c and the next.
-			//
-		    }
-		    else {
-			// return unexpected end of file
-		    }
-		}
+
+    void handleExp(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
+    }
+    
+    void handleMantissa(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
+	while( reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
+	    vec.push_back(reader.next());
+	}
+	if( reader.hasMore() && ((reader.peekNext() == 'E') || (reader.peekNext() == 'e'))) {
+	    if(reader.hasMore() &&( ( reader.peekNext() == '+') || (reader.peekNext() == '-')) ) {
+		vec.push_back(reader.next());
+		//
 	    }
-	    else {
-		// return a single-quote operator
+	    while( reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
+		vec.push_back(reader.next());
 	    }
-	    while (reader.hasMore() && (reader.peekNext() != '\r') && (reader.peekNext() != '\n')) {
-		text.append(1,reader.next());
+	    if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'F'))) {
+		vec.push_back(reader.next());
+		// floating point
 	    }
-	    int i = context.keywordIndex(text);
-	    outSlab->line = reader.getLine();
-	    outSlab->col = col;
-	    if (i < 0) {
-		outSlab->slabType = quarry_Identifier;
-		outSlab->data = (unsigned char *)text.c_str();
-		outSlab->slabLength = text.length();
-		outSlab->slabMD = 0;
-		return outSlab;
-	    }
-	    else {
-		outSlab->slabType = quarry_Keyword;
-		outSlab->data = nullptr;
-		outSlab->slabLength = 0;
-		outSlab->slabMD = i;
-		return outSlab;
+	    else if(reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
+		vec.push_back(reader.next());
+		// long double
+	    }else {
+		// double
 	    }
 	}
-    };
+    }
+
+    bool handleOptionalU(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
+	if(reader.hasMore() && ((reader.peekNext() == 'u') || (reader.peekNext() == 'U'))) {
+	    vec.push_back(reader.next());
+	    slab->slabMD = slab->slabMD + 1;
+	    return true;
+	}
+	return false;
+    }
+    
+    bool handleOptionalLL(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
+	if(reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
+	    vec.push_back(reader.next());
+	    slab->slabMD = slab->slabMD + 1;
+	    if (reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
+		vec.push_back(reader.next());
+		slab->slabMD = slab->slabMD + 1;
+	    }
+	    return true;
+	}
+	return false;
+    }
+
+    quarry_SlabPtr OperatorLexer :: scan(QReader &reader, QContext &context) const {
+	auto c = reader.next();
+ 	quarry_SlabPtr outSlab = new quarry_Slab();
+	outSlab->col = reader.getCol();
+	outSlab->line = reader.getLine();
+	outSlab->slabType = quarry_Operator;
+	std::vector<unsigned char> text;
+	std::string t;
+	text.push_back(c);
+	t.push_back(c);
+	while(reader.hasMore() &&  (allowed.find(reader.peekNext()) == std::string::npos)) {
+	    text.push_back(c);
+	    t.push_back(c);
+	}
+	fillToken(outSlab, text);
+	outSlab->slabMD = context.operatorIndex(t);
+	return outSlab;
+    }
+    
+    quarry_SlabPtr NumberLexer :: scan(QReader &reader, QContext &context) const {
+	auto c = reader.next();
+	std::vector<unsigned char> vec;
+	int column = reader.getCol();
+	int line = reader.getLine();
+	quarry_SlabPtr ret = new quarry_Slab();
+	ret->line = line;
+	ret->col = column;
+	ret->slabType = quarry_Numbers;
+	
+	vec.push_back(c);
+	if (c > '0') {
+	    while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
+		vec.push_back(reader.next());
+	    }
+	    ret->slabMD = 0;
+	    if(handleOptionalLL(ret, vec, reader)) {
+		handleOptionalU(ret, vec, reader);
+	    }else if(handleOptionalU(ret, vec, reader)) {
+		handleOptionalLL(ret, vec, reader);
+	    }
+	    else if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'f'))) {
+		vec.push_back(reader.next());
+		ret->slabMD = 10;
+	    }else if(reader.hasMore() && ((reader.peekNext() == 'd') || (reader.peekNext() == 'D'))) {
+		vec.push_back(reader.next());
+		ret->slabMD = 20;
+	    }else if(reader.hasMore() && (reader.peekNext() == '.')) {
+		vec.push_back(reader.next());
+		handleMantissa(ret, vec, reader);
+	    }
+	}
+	else {
+	    //we assume that the else is only the case where current one is 0
+	    if (reader.hasMore() && ((reader.peekNext() == 'x') || (reader.peekNext() == 'X'))) {
+		vec.push_back(reader.next());
+		// hexadecimal
+		while(reader.hasMore() && 
+		      (
+		       ((reader.peekNext() >= '0') && (reader.peekNext() <= '9')) ||
+		       ((reader.peekNext() >= 'A') && (reader.peekNext() <= 'F')) ||
+		       ((reader.peekNext() >= 'a') && (reader.peekNext() <= 'f')) )) {
+		    vec.push_back(reader.next());		    
+		}
+	    }
+	    else if(reader.hasMore() && ((reader.peekNext() == 'b') || (reader.peekNext() == 'B'))) {
+		vec.push_back(reader.next());
+		while(reader.hasMore() && ((reader.peekNext() == '0') || (reader.peekNext() == '1'))) {
+		    vec.push_back(reader.next());
+		}
+	    }
+	    else{
+		while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
+		    vec.push_back(reader.next());
+		}
+	    }
+	    if(handleOptionalLL(ret, vec, reader)) {
+		handleOptionalU(ret, vec, reader);
+	    }
+	    else {
+		handleOptionalU(ret, vec, reader);
+		handleOptionalLL(ret, vec, reader);
+	    }
+	}
+	fillToken(ret, vec);
+	return ret;
+    }
+    
+    quarry_SlabPtr DelimitedLexer :: scan(QReader &reader, QContext &context) const {
+	auto c = reader.next();
+ 	quarry_SlabPtr outSlab = new quarry_Slab();
+	outSlab->col = reader.getCol();
+	std::vector<unsigned char> text;
+	text.push_back(c);
+	if (reader.hasMore()) {
+	    c = reader.next();
+	    if (c == delimiter) {
+		outSlab->line = reader.getLine();
+		outSlab->slabMD = 0;
+		outSlab->slabType = tokenType;
+		fillToken(outSlab, text);
+		return outSlab;
+	    }
+	    else if (c == escape) {
+		if (reader.hasMore()) {
+		    text.push_back(c);
+		    text.push_back(reader.next());
+		}
+		else {
+		    outSlab->line = reader.getLine();
+		    outSlab->slabMD = 0;
+		    outSlab->slabType = quarry_Error;
+		    fillToken(outSlab, text);
+		    return outSlab;
+		}
+	    }
+	}
+	else {
+	    outSlab->line = reader.getLine();
+	    outSlab->slabMD = 0;
+	    outSlab->slabType = quarry_Error;
+	    fillToken(outSlab, text);
+	    return outSlab;
+	}
+    }
     
     void addPunctuationLexers (QContext &context) {
 	context.lexers[';'] = new SingleCharLexer (';', quarry_Punctuation);
