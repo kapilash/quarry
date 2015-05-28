@@ -59,3 +59,16 @@ BOOST_AUTO_TEST_CASE (simple_file)
     BOOST_CHECK(bCount == 10);
     BOOST_CHECK(cCount == 10);
 }
+
+BOOST_AUTO_TEST_CASE (oneMBfile)
+{
+    Quarry::QReader qr("HugeJavaIn");
+    int count = 0;
+    while(qr.hasMore()) {
+	qr.next();
+	count++;
+    }
+
+    BOOST_CHECK(count == 127722);
+    BOOST_CHECK(qr.getLine() == 3808);
+}

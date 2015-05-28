@@ -26,7 +26,6 @@ namespace Quarry {
       position = 0;
       length = file.size();
       bytes = reinterpret_cast<const unsigned char *>(file.data());
-      isInMemory = false;
     }
 
     QReader::QReader(const unsigned char *byteArray, size_t arrayLength, int l = 1, int c = 1){
@@ -36,17 +35,17 @@ namespace Quarry {
         column = c;
 	position = 0;
 	length = arrayLength;
-	isInMemory = true;
     }
     
     QReader::~QReader() {
       if (file.is_open()) {
 	file.close();
       }
+      else {
+	  delete []bytes;
+      }
       line = 0;
       column = 0;
       position = 0;
-      if (isInMemory)
-	  delete []bytes;
     }
 }

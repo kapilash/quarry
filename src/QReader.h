@@ -40,7 +40,6 @@ namespace Quarry {
 	QUARRY_EXPORT ~QReader();
     private:
 	boost::iostreams::mapped_file_source file;
-	bool isInMemory;
 	const unsigned char *bytes;
 	std::size_t length;
 	std::size_t position;
