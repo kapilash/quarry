@@ -235,6 +235,18 @@ namespace Quarry {
 
     class SchemeHashLexer : public BaseLexer {
     private:
+	const std::map<std::string, unsigned int> nameValueMap = {
+	    {std::string("alarm"),   7},
+	    {std::string("backspace"),8},
+	    {std::string("delete"), 127},
+	    {std::string("escape"),  33},
+	    {std::string("newline"), 10},
+	    {std::string("null"),     0},
+	    {std::string("return"),   13},
+	    {std::string("space"),    32},
+	    {std::string("tab"),       9}
+	};
+	
 	quarry_SlabPtr scanBool(QReader &reader, QContext &context, bool b) const {
 	    reader.next();
 	    quarry_SlabPtr ret = new quarry_Slab();
@@ -252,10 +264,23 @@ namespace Quarry {
 	    ret->line = reader.getLine();
 	    ret->col = reader.getCol() - 2;
 	    std::vector<unsigned char> tokenText;
+	    ret->slabType = quarry_Char;
+	    unsigned char c = reader.peekNext();
+
+	    if (c == 'x') {
+		tokenText.push_back(reader.next());
+		c = reader.peekNext();
+		while ( ('0' <= c) && (  '9' >= c)) {
+		    unsigned char digit = reader.next();
+		    tokenText.push_back(digit);
+		}
+	    }
+	    else if (c < 128) {
+	    }
 	    while(!IS_SCHEME_DELIMITER(reader.peekNext())) {
 	      tokenText.push_back(reader.next());
 	    }
-	    ret->slabType = quarry_Char;
+
 	    fillToken(ret, tokenText);
 	    ret->slabMD = 0;
 	    return nullptr;
