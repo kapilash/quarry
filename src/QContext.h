@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 
 namespace Quarry {
     class QContext{
@@ -36,6 +37,7 @@ namespace Quarry {
 	bool isInMemory;
 	std::FILE *fp;
 	unsigned char *bytes;
+	
 	size_t length;
 	size_t pos;
 	int line;

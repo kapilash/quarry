@@ -1,44 +1,48 @@
 #pragma once
 
-#include <vector>
-#include <cstdio>
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <iostream>
+#include "quarry_export.h"
 
 namespace Quarry {
-    class QReader{
+    QUARRY_EXPORT class QReader{
+    private:
+	QUARRY_EXPORT void read();
     public:
-	QReader(const char *fileName);
-	QReader(const unsigned char *byteArray, int length, int l, int col);
+	QUARRY_EXPORT QReader(const char *fileName);
+	QUARRY_EXPORT QReader(const unsigned char *byteArray, size_t length, int l, int col);
 
-	bool read();
 
-	inline bool hasMore() const {
-	    return !(pos >= length);
+
+	inline bool hasMore()  {
+	  return (position < length);
 	}
             
 	inline unsigned char peekNext() const{
-	    return bytes[pos];
+	    return bytes[position];
 	}
             
 	inline unsigned char next() {
-	    unsigned char n = bytes[pos];++pos; ++column; return n;
-	}
-
-	inline void incrementLine(){
-	    ++line;
-	    column = 1;
+	    unsigned char c = bytes[position];
+	    position++;
+	    column++;
+	  if (c == '\n') {
+	      ++line;
+	      column = 0;
+	  }
+	  return c;
 	}
             
 	inline int getCol() { return column;}
             
 	inline int getLine() { return line;}
 
-	~QReader();
+	QUARRY_EXPORT ~QReader();
     private:
-	bool isInMemory;
-	std::FILE *fp;
-	unsigned char *bytes;
-	size_t length;
-	size_t pos;
+	boost::iostreams::mapped_file_source file;
+	const unsigned char *bytes;
+	std::size_t length;
+	std::size_t position;
 	int line;
 	int column;
     };

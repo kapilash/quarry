@@ -1,9 +1,9 @@
-#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE reader_tests test
 #include <boost/test/unit_test.hpp>
 
 #include "QReader.h"
 #include <cstring>
+#include <iostream>
 BOOST_AUTO_TEST_CASE (simple_string)
 {
     const char *str = "hello world";
@@ -19,7 +19,6 @@ BOOST_AUTO_TEST_CASE (simple_string)
     BOOST_CHECK(qr.hasMore());
     for (int i=0; i<100; i++) {
 	BOOST_CHECK(qr.peekNext() == 'h' );
-	qr.incrementLine();
     }
     int count = 0;
     while (qr.hasMore()) {
@@ -27,15 +26,14 @@ BOOST_AUTO_TEST_CASE (simple_string)
 	count++;
     }
     BOOST_CHECK(count == len);
-    BOOST_CHECK((initLine + 100) == qr.getLine());
-    BOOST_CHECK((len + 1) == qr.getCol());
+    BOOST_CHECK(initLine == qr.getLine());
+    BOOST_CHECK( initCol + len == qr.getCol());
 }
 
 BOOST_AUTO_TEST_CASE (simple_file)
 {
     Quarry::QReader qr("ReaderTest1");
-    BOOST_CHECK(!qr.hasMore());
-    BOOST_CHECK(qr.read());
+    BOOST_CHECK(qr.hasMore());
     for (int i=0; i<100; i++) {
 	BOOST_CHECK(qr.peekNext() == 'a' );
     }
@@ -55,7 +53,22 @@ BOOST_AUTO_TEST_CASE (simple_file)
 	    lineCount++;
     }
     BOOST_CHECK(lineCount == 2);
+    BOOST_CHECK(3 == qr.getLine());
+    BOOST_CHECK(cCount == qr.getCol());
     BOOST_CHECK(aCount == 10);
     BOOST_CHECK(bCount == 10);
     BOOST_CHECK(cCount == 10);
+}
+
+BOOST_AUTO_TEST_CASE (oneMBfile)
+{
+    Quarry::QReader qr("HugeJavaIn");
+    int count = 0;
+    while(qr.hasMore()) {
+      if(qr.next() != '\r')
+	count++;
+    }
+
+    BOOST_CHECK(count == 127722);
+    BOOST_CHECK(qr.getLine() == 3808);
 }

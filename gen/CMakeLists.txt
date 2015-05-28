@@ -17,4 +17,6 @@ add_executable(kw
 )
 
 add_executable(kwverify "verify.cpp")
-target_link_libraries(kwverify ${Boost_LIBRARIES})
+
+TARGET_LINK_LIBRARIES(kwverify ${Boost_LIBRARIES} )
+
