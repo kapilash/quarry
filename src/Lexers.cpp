@@ -36,18 +36,19 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 
 namespace Quarry {
-
-  static void fillToken(quarry_SlabPtr pointer, std::vector<unsigned char> &tokenText)
-  {
-      pointer->slabLength = tokenText.size();
-      if(tokenText.size() > 0) {
-	  pointer->data = new unsigned char[tokenText.size()];
-	  std::copy(tokenText.begin(), tokenText.end(), pointer->data);
-      }
-      else{
-	  pointer->data = nullptr;
-      }
-  }
+    
+    static void fillToken(quarry_SlabPtr pointer, std::vector<unsigned char> &tokenText)
+    {
+	pointer->slabLength = tokenText.size();
+	if(tokenText.size() > 0) {
+	    pointer->data = new unsigned char[tokenText.size()];
+	    std::copy(tokenText.begin(), tokenText.end(), pointer->data);
+	}
+	else{
+	    pointer->data = nullptr;
+	}
+    }
+    
     quarry_SlabPtr SingleCharLexer :: scan(QReader &reader, QContext &context) const {
 	quarry_SlabPtr outSlab = new quarry_Slab();
 	unsigned char c = reader.next();
@@ -287,15 +288,17 @@ namespace Quarry {
 	}
 	}; */
 
-    void handleExp(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
-    }
     
     void handleMantissa(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
 	while( reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
 	    vec.push_back(reader.next());
 	}
 	if( reader.hasMore() && ((reader.peekNext() == 'E') || (reader.peekNext() == 'e'))) {
+	    reader.next();
+	    vec.push_back('E');
+	    slab->slabMD = slab->slabMD | quarry_Number_HasE;
 	    if(reader.hasMore() &&( ( reader.peekNext() == '+') || (reader.peekNext() == '-')) ) {
+		slab->slabMD |= quarry_Number_HasSign;
 		vec.push_back(reader.next());
 		//
 	    }
@@ -304,10 +307,12 @@ namespace Quarry {
 	    }
 	    if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'F'))) {
 		vec.push_back(reader.next());
+		slab->slabMD = slab->slabMD | quarry_Number_IsFloat;
 		// floating point
 	    }
 	    else if(reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
 		vec.push_back(reader.next());
+		slab->slabMD = slab->slabMD | quarry_Number_HasL;
 		// long double
 	    }else {
 		// double
@@ -317,8 +322,9 @@ namespace Quarry {
 
     bool handleOptionalU(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
 	if(reader.hasMore() && ((reader.peekNext() == 'u') || (reader.peekNext() == 'U'))) {
-	    vec.push_back(reader.next());
-	    slab->slabMD = slab->slabMD + 1;
+	    reader.next();
+	    vec.push_back('U');
+	    slab->slabMD = slab->slabMD | quarry_Number_IsUnsigned;
 	    return true;
 	}
 	return false;
@@ -326,11 +332,13 @@ namespace Quarry {
     
     bool handleOptionalLL(quarry_SlabPtr slab, std::vector<unsigned char>& vec, QReader &reader) {
 	if(reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
-	    vec.push_back(reader.next());
-	    slab->slabMD = slab->slabMD + 1;
+	    vec.push_back('L');
+	    reader.next();
+	    slab->slabMD = slab->slabMD | quarry_Number_HasL;
 	    if (reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
-		vec.push_back(reader.next());
-		slab->slabMD = slab->slabMD + 1;
+		vec.push_back('L');
+		reader.next();
+		slab->slabMD = slab->slabMD | quarry_Number_HasTwoLs;
 	    }
 	    return true;
 	}
@@ -365,6 +373,7 @@ namespace Quarry {
 	ret->line = line;
 	ret->col = column;
 	ret->slabType = quarry_Numbers;
+	ret->slabMD = 0;
 	
 	vec.push_back(c);
 	if (c > '0') {
@@ -372,20 +381,24 @@ namespace Quarry {
 		vec.push_back(reader.next());
 	    }
 	    ret->slabMD = 0;
-	    if(handleOptionalLL(ret, vec, reader)) {
-		handleOptionalU(ret, vec, reader);
+	    handleOptionalLL(ret, vec, reader);
+	    auto hasU = handleOptionalU(ret, vec, reader);
+
+	    if(handleOptionalLL(ret, vec, reader) || hasU) {
+		//
 	    }else if(handleOptionalU(ret, vec, reader)) {
 		handleOptionalLL(ret, vec, reader);
 	    }
 	    else if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'f'))) {
 		vec.push_back(reader.next());
-		ret->slabMD = 10;
+		ret->slabMD = ret->slabMD | quarry_Number_IsFloat;
 	    }else if(reader.hasMore() && ((reader.peekNext() == 'd') || (reader.peekNext() == 'D'))) {
 		vec.push_back(reader.next());
-		ret->slabMD = 20;
+		ret->slabMD = ret->slabMD | quarry_Number_IsDouble;
 	    }else if(reader.hasMore() && (reader.peekNext() == '.')) {
 		vec.push_back(reader.next());
 		handleMantissa(ret, vec, reader);
+		ret->slabMD = ret->slabMD | quarry_Number_HasDot;
 	    }
 	}
 	else {
@@ -400,14 +413,17 @@ namespace Quarry {
 		       ((reader.peekNext() >= 'a') && (reader.peekNext() <= 'f')) )) {
 		    vec.push_back(reader.next());		    
 		}
+		ret->slabMD = ret->slabMD | quarry_Number_IsHex;
 	    }
 	    else if(reader.hasMore() && ((reader.peekNext() == 'b') || (reader.peekNext() == 'B'))) {
 		vec.push_back(reader.next());
+		ret->slabMD = ret->slabMD | quarry_Number_IsBinary;
 		while(reader.hasMore() && ((reader.peekNext() == '0') || (reader.peekNext() == '1'))) {
 		    vec.push_back(reader.next());
 		}
 	    }
 	    else{
+		ret->slabMD = ret->slabMD | quarry_Number_IsOctal;
 		while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
 		    vec.push_back(reader.next());
 		}

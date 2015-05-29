@@ -35,6 +35,20 @@ enum quarry_SlabType{
   quarry_EOF
 };
 
+enum quarry_Number_Flags {
+    quarry_Number_HasL = 1<<0,
+    quarry_Number_HasTwoLs = 1<<1,
+    quarry_Number_HasE = 1<<2,
+    quarry_Number_HasSign=1<<3,
+    quarry_Number_HasDot = 1<<4,
+    quarry_Number_IsDouble= 1<<5,
+    quarry_Number_IsFloat = 1<<6,
+    quarry_Number_IsOctal = 1<<7,
+    quarry_Number_IsBinary = 1<<8,
+    quarry_Number_IsHex = 1<<9,
+    quarry_Number_IsUnsigned = 1 <<10
+};
+
 
 struct quarry_Slab_
 {
