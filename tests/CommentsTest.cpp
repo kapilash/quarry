@@ -54,7 +54,8 @@ BOOST_AUTO_TEST_CASE (simpleBlockComment)
       leftOver.append(1, qr.next());
     }
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
-    std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    //std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    delete lexer;
 }
 
 BOOST_AUTO_TEST_CASE (schemeBlockComment)
@@ -83,7 +84,8 @@ BOOST_AUTO_TEST_CASE (schemeBlockComment)
     }
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
 
-    std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    //std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    delete lexer;
 }
 
 BOOST_AUTO_TEST_CASE (nestedBlockComment)
@@ -111,5 +113,26 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
     }
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
 
-    std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    //std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    delete lexer;
+}
+
+BOOST_AUTO_TEST_CASE(java_comments)
+{
+    Quarry::QReader qr("ManualComments.txt");
+    Quarry::QContext context(Quarry::C);
+    Quarry::SkipSpace spaceLexer;
+    Quarry::CLikeComment comments;
+    int commentCount = 0;
+    while(qr.hasMore()) {
+	auto slab = comments.scan(qr, context);
+	BOOST_CHECK(slab != nullptr);
+	BOOST_CHECK(slab->slabType == quarry_Comment);
+	BOOST_CHECK(slab->slabLength == 0);
+	BOOST_CHECK(slab->data == nullptr);
+	//std::cout << "java_comments:{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+	commentCount++;
+	spaceLexer.scan(qr, context);
+    }
+    BOOST_CHECK(commentCount == 10);
 }

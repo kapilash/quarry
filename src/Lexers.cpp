@@ -39,14 +39,14 @@ namespace Quarry {
 
   static void fillToken(quarry_SlabPtr pointer, std::vector<unsigned char> &tokenText)
   {
-    pointer->slabLength = tokenText.size();
-    if(tokenText.size() > 0) {
-      pointer->data = new unsigned char[tokenText.size()];
-      std::copy(tokenText.begin(), tokenText.end(), pointer->data);
-    }
-    else{
-      pointer->data = nullptr;
-    }
+      pointer->slabLength = tokenText.size();
+      if(tokenText.size() > 0) {
+	  pointer->data = new unsigned char[tokenText.size()];
+	  std::copy(tokenText.begin(), tokenText.end(), pointer->data);
+      }
+      else{
+	  pointer->data = nullptr;
+      }
   }
     quarry_SlabPtr SingleCharLexer :: scan(QReader &reader, QContext &context) const {
 	quarry_SlabPtr outSlab = new quarry_Slab();
@@ -135,7 +135,7 @@ namespace Quarry {
 	    outSlab->slabMD = 0;
 	    reader.next(); // consume the new line
 	}
-	else if (reader.hasMore() && (reader.peekNext() != '*')) {
+	else if (reader.hasMore() && (reader.peekNext() == '*')) {
 	    DoubleCharComment dcc('/','*','/');
 	    return dcc.scan(reader, context);
 	}
@@ -460,6 +460,23 @@ namespace Quarry {
 	    fillToken(outSlab, text);
 	    return outSlab;
 	}
+    }
+    quarry_SlabPtr SkipSpace :: scan(QReader &reader, QContext &context) const {
+	auto initLine = reader.getLine();
+	quarry_SlabPtr outSlab = new quarry_Slab();
+	outSlab->col = reader.getCol();
+	reader.next();
+	while(reader.hasMore() && reader.peekNext() < 33) {
+	    reader.next();
+	}
+
+
+	outSlab->slabType = quarry_Whitespace;
+	outSlab->line = reader.getLine();
+	outSlab->slabMD = initLine;
+	outSlab->slabLength = 0;
+	outSlab->data = nullptr;
+	return outSlab;
     }
     
     void addPunctuationLexers (QContext &context) {

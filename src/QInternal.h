@@ -131,5 +131,10 @@ namespace Quarry {
 	QUARRY_EXPORT OperatorLexer(std::string operChars) : allowed(operChars) {}
 	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
     };
+
+    class SkipSpace : public BaseLexer {
+    public:
+	QUARRY_EXPORT quarry_SlabPtr scan(QReader &reader, QContext &context) const;
+    };
     QUARRY_EXPORT BaseLexer* getDblCharCommentLexer(char b, char s, char e);
 }

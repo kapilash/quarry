@@ -1,0 +1,28 @@
+//First line is a simple
+
+// Another simple comment
+
+    	   	  // this should ignore /*
+
+/* A nested, multi-line comment starting containing
+ two inner multiline comments /* this contains two
+ inner comments the following // asdalskdasd
+ and the inner most /* and it ends here */ asd
+ */ asd a empty comment /**/ asdj */
+
+
+         // this comment begins else where */
+
+//
+
+// Another simple comment
+
+    	   	  //*
+
+/* A nested, multi-line comment starting containing
+ two inner multiline comments /* this contains two
+ inner comments the following // asdalskdasd
+ and the inner most /* and it ends here */ asd
+ */ asd a empty comment /**/ asdj */
+
+         // this comment begins else where */
