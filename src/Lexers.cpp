@@ -401,8 +401,12 @@ namespace Quarry {
 		ret->slabMD = ret->slabMD | quarry_Number_HasDot;
 	    }
 	}
+	else if (reader.hasMore() && (reader.peekNext() == '.')){
+	    vec.push_back(reader.next());
+	    ret->slabMD = ret->slabMD | quarry_Number_HasDot;
+	    handleMantissa(ret, vec, reader);
+	}
 	else {
-	    //we assume that the else is only the case where current one is 0
 	    if (reader.hasMore() && ((reader.peekNext() == 'x') || (reader.peekNext() == 'X'))) {
 		vec.push_back(reader.next());
 		// hexadecimal

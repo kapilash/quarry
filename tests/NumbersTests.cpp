@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <locale>
 
+
 BOOST_AUTO_TEST_CASE(many_numbers)
 {
     Quarry::QReader qr("Numbers.txt");
@@ -23,10 +24,11 @@ BOOST_AUTO_TEST_CASE(many_numbers)
 	BOOST_CHECK(slab != nullptr);
 	BOOST_CHECK(slab->slabType == quarry_Numbers);
 	BOOST_CHECK(slab->slabLength != 0);
-	//	BOOST_CHECK(slab->data == nullptr);
+	BOOST_CHECK(slab->data != nullptr);
+	Quarry::printSlab(slab, count);
 	//	std::cout << count << ":{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << "; text=" << slab->data <<"}" << std::endl ;
 	count++;
 	spaceLexer.scan(qr, context);
     }
-    BOOST_CHECK(count == 28);
+    BOOST_CHECK(count == 32);
 }

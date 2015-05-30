@@ -10,6 +10,7 @@ set (SOURCES
     QReader.h
     quarry.h
     QuarryMaps.cpp
+    QMisc.cpp
     )
     
 add_library(quarry SHARED   ${SOURCES})
