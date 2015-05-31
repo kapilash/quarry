@@ -47,10 +47,53 @@ BOOST_AUTO_TEST_CASE(many_chars)
 	BOOST_CHECK(slab->slabType == quarry_Char);
 	BOOST_CHECK(slab->slabLength != 0);
 	BOOST_CHECK(slab->data != nullptr);
-	Quarry::printSlab(slab, count);
+	//Quarry::printSlab(slab, count);
 	//	std::cout << count << ":{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << "; text=" << slab->data <<"}" << std::endl ;
 	count++;
 	spaceLexer.scan(qr, context);
     }
     BOOST_CHECK(count == 9);
+}
+
+BOOST_AUTO_TEST_CASE(idents_and_keywords)
+{
+    Quarry::QReader qr("Idents.txt");
+    Quarry::QContext context(Quarry::C);
+    Quarry::SkipSpace spaceLexer;
+    Quarry::CIdentifier strings;
+    int count = 0;
+    while(qr.hasMore()) {
+	auto kw = strings.scan(qr, context);
+	BOOST_CHECK(kw != nullptr);
+	BOOST_CHECK(kw->slabType == quarry_Keyword);
+	BOOST_CHECK(kw->slabLength == 0);
+	BOOST_CHECK(kw->data == nullptr);
+	//Quarry::printSlab(kw, count);
+	//	std::cout << count << ":{line = " << kw->line << "; column="<< kw->col << "; length=" << kw->kwLength << "; type=" << kw->kwType << "; text=" << kw->data <<"}" << std::endl ;
+	count++;
+	delete kw;
+	spaceLexer.scan(qr, context);
+	
+	auto ident1 = strings.scan(qr, context);
+	BOOST_CHECK(ident1 != nullptr);
+	BOOST_CHECK(ident1->slabType == quarry_Identifier);
+	BOOST_CHECK(ident1->slabLength != 0);
+	BOOST_CHECK(ident1->data != nullptr);
+	//Quarry::printSlab(ident1, count);
+	//	std::cout << count << ":{line = " << ident1->line << "; column="<< ident1->col << "; length=" << ident1->ident1Length << "; type=" << ident1->ident1Type << "; text=" << ident1->data <<"}" << std::endl ;
+	count++;
+	spaceLexer.scan(qr, context);
+	delete ident1;
+
+	auto ident2 = strings.scan(qr, context);
+	BOOST_CHECK(ident2 != nullptr);
+	BOOST_CHECK(ident2->slabType == quarry_Identifier);
+	BOOST_CHECK(ident2->slabLength != 0);
+	BOOST_CHECK(ident2->data != nullptr);
+	//Quarry::printSlab(ident2, count);
+	//	std::cout << count << ":{line = " << ident2->line << "; column="<< ident2->col << "; length=" << ident2->ident2Length << "; type=" << ident2->ident2Type << "; text=" << ident2->data <<"}" << std::endl ;
+	count++;
+	spaceLexer.scan(qr, context);
+	delete ident2;
+    }
 }

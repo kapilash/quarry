@@ -54,6 +54,7 @@ BOOST_AUTO_TEST_CASE (simpleBlockComment)
       leftOver.append(1, qr.next());
     }
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
+    delete slab;
     //std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
     delete lexer;
 }
@@ -85,6 +86,7 @@ BOOST_AUTO_TEST_CASE (schemeBlockComment)
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
 
     //std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
+    delete slab;
     delete lexer;
 }
 
@@ -115,6 +117,7 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
 
     //std::cout << "{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
     delete lexer;
+    delete slab;
 }
 
 BOOST_AUTO_TEST_CASE(java_comments)
@@ -133,6 +136,7 @@ BOOST_AUTO_TEST_CASE(java_comments)
 	//std::cout << "java_comments:{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
 	commentCount++;
 	spaceLexer.scan(qr, context);
+	delete slab;
     }
     BOOST_CHECK(commentCount == 10);
 }

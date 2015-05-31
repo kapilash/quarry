@@ -180,7 +180,9 @@ namespace Quarry {
 	std::vector<unsigned char> text;
 	std::string t;
 	unsigned long hval = FNV1A_32_INIT ;
-	
+
+	text.push_back(c);
+	t.push_back(c);
 	while (reader.hasMore() && (IS_IDENTIFIER_CHAR(reader.peekNext()))) {
 	    c = reader.next();
 	    text.push_back(c);
@@ -189,12 +191,13 @@ namespace Quarry {
 	    hval *= FNV_32_PRIME;
 	}
 	int i = context.keywordIndex(t);
+
 	outSlab->line = reader.getLine();
 	outSlab->col = col;
 	if (i < 0) {
 	    outSlab->slabType = quarry_Identifier;
-	    fillToken(outSlab, text);
 	    outSlab->slabMD = hval;
+	    fillToken(outSlab, text);
 	    return outSlab;
 	}
 	else {

@@ -6,6 +6,7 @@ configure_file(ReaderTest1 ReaderTest1 COPYONLY)
 configure_file(ManualComments.txt ManualComments.txt COPYONLY)
 configure_file(Numbers.txt Numbers.txt COPYONLY)
 configure_file(Chars.txt Chars.txt COPYONLY)
+configure_file(Idents.txt Idents.txt COPYONLY)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 add_executable(rtests "rtests.cpp")
