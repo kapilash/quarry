@@ -450,8 +450,9 @@ namespace Quarry {
 	outSlab->col = reader.getCol();
 	std::vector<unsigned char> text;
 	text.push_back(c);
-	if (reader.hasMore()) {
+	while (reader.hasMore()) {
 	    c = reader.next();
+	    text.push_back(c);
 	    if (c == delimiter) {
 		outSlab->line = reader.getLine();
 		outSlab->slabMD = 0;
@@ -461,7 +462,6 @@ namespace Quarry {
 	    }
 	    else if (c == escape) {
 		if (reader.hasMore()) {
-		    text.push_back(c);
 		    text.push_back(reader.next());
 		}
 		else {
@@ -473,13 +473,11 @@ namespace Quarry {
 		}
 	    }
 	}
-	else {
-	    outSlab->line = reader.getLine();
-	    outSlab->slabMD = 0;
-	    outSlab->slabType = quarry_Error;
-	    fillToken(outSlab, text);
-	    return outSlab;
-	}
+	outSlab->line = reader.getLine();
+	outSlab->slabMD = 0;
+	outSlab->slabType = quarry_Error;
+	fillToken(outSlab, text);
+	return outSlab;
     }
     quarry_SlabPtr SkipSpace :: scan(QReader &reader, QContext &context) const {
 	auto initLine = reader.getLine();
