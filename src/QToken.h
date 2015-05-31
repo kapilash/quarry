@@ -1,0 +1,75 @@
+/*
+Copyright (c) Hemanth Kapila
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+The name of Hemanth Kapila may NOT be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#pragma once
+
+#include <string>
+#include <boost/functional/hash.hpp>
+#include "quarry_export.h"
+
+namespace Quarry {
+    enum TokenType {
+	ERROR,
+	KEYWORD,
+	IDENT,
+	STRING,
+	CHAR,
+	NUMBER,
+	OPERATOR,
+	OPEN_BRACE,
+	CLOSE_BRACE,
+	OPEN_BRACKET,
+	CLOSE_BRACKET,
+	SQUARE_OPEN,
+	SQUARE_CLOSE,
+	DOT,
+	COLON,
+	SEMI_COLON,
+	QUESTION_MARK,
+	COMMA,
+	COMMENT,
+	WHITESPACE,
+	NEWLINE,
+	META_ID,
+	BOOL,
+	QEOF
+    };
+
+    class Token{
+    public:
+	const int line;
+	const int column;
+	enum TokenType tokenType;
+
+	QUARRY_EXPORT Token(int line, int column, enum TokenType);
+	QUARRY_EXPORT Token(const Token &other);
+	QUARRY_EXPORT virtual ~Token() {}
+    };
+
+    template <typename T, enum TokenType tokenType>
+	class GenericToken : public Token{
+    public:
+	const T value;
+	QUARRY_EXPORT GenericToken(int line, int column, T value): Token(line,column, tokenType), value(value) {}
+	template <typename K, enum TokenType Y>
+	    QUARRY_EXPORT GenericToken(const GenericToken<K,Y> &other): Token(other.line,other.column, tokenType), value(other.value) {}
+    };
+
+    typedef GenericToken<int, KEYWORD> Keyword;
+
+    typedef GenericToken<unsigned int, CHAR> CharToken;
+
+    typedef GenericToken<std::string, STRING> StringToken;
+
+    typedef GenericToken<double, NUMBER> DoubleToken;
+    typedef GenericToken<float, NUMBER> FloatToken;
+}

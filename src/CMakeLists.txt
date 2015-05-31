@@ -11,6 +11,8 @@ set (SOURCES
     quarry.h
     QuarryMaps.cpp
     QMisc.cpp
+    QToken.h
+    QToken.cpp
     )
     
 add_library(quarry SHARED   ${SOURCES})
