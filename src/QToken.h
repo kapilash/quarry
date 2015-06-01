@@ -70,7 +70,7 @@ namespace Quarry {
 	const T value;
 	QUARRY_EXPORT GenericToken(int line, int column, T value): Token(line,column, tokenType), value(value) {}
 	template <typename K, enum TokenType Y>
-	    QUARRY_EXPORT GenericToken(const GenericToken<K,Y> &other): Token(other.line,other.column, tokenType), value(other.value) {}
+	    GenericToken(const GenericToken<K,Y> &other): Token(other.line,other.column, tokenType), value(other.value) {}
     };
 
     template <typename T>
@@ -80,7 +80,7 @@ namespace Quarry {
 	const IntegralType integralType;
 	QUARRY_EXPORT DecimalToken(int line, int column, T value, enum IntegralType iType): Token(line,column, NUMBER), value(value) , integralType(iType) {}
 	template <typename K>
-	    QUARRY_EXPORT DecimalToken(const DecimalToken<K> &other): Token(other.line,other.column, NUMBER), value(other.value), integralType(other.integralType) {}
+	    DecimalToken(const DecimalToken<K> &other): Token(other.line,other.column, NUMBER), value(other.value), integralType(other.integralType) {}
     };
 
     typedef GenericToken<int, KEYWORD> Keyword;

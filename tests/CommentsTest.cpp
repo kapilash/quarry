@@ -120,6 +120,7 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
     delete slab;
 }
 
+
 BOOST_AUTO_TEST_CASE(java_comments)
 {
     Quarry::QReader qr("ManualComments.txt");
@@ -127,6 +128,7 @@ BOOST_AUTO_TEST_CASE(java_comments)
     Quarry::SkipSpace spaceLexer;
     Quarry::CLikeComment comments;
     int commentCount = 0;
+
     while(qr.hasMore()) {
 	auto slab = comments.scan(qr, context);
 	BOOST_CHECK(slab != nullptr);
@@ -135,8 +137,14 @@ BOOST_AUTO_TEST_CASE(java_comments)
 	BOOST_CHECK(slab->data == nullptr);
 	//std::cout << "java_comments:{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << std::endl;
 	commentCount++;
-	spaceLexer.scan(qr, context);
+	auto spaces = spaceLexer.scan(qr, context);
+	BOOST_CHECK(spaces->slabLength == 0);
+	BOOST_CHECK(spaces->data == nullptr);
+
+	delete spaces;
 	delete slab;
     }
-    BOOST_CHECK(commentCount == 10);
+
+    BOOST_CHECK(commentCount == 10); 
 }
+

@@ -138,6 +138,7 @@ namespace Quarry {
 	}
 	else if (reader.hasMore() && (reader.peekNext() == '*')) {
 	    DoubleCharComment dcc('/','*','/');
+	    delete outSlab;
 	    return dcc.scan(reader, context);
 	}
 	else {
@@ -201,6 +202,7 @@ namespace Quarry {
 	    return outSlab;
 	}
 	else {
+	  
 	    outSlab->slabType = quarry_Keyword;
 	    outSlab->data = nullptr;
 	    outSlab->slabLength = 0;
