@@ -44,6 +44,15 @@ namespace Quarry {
 	QEOF
     };
 
+    enum IntegralType {
+	QInt,
+	QUnsignedInt,
+	QLong,
+	QLongLong,
+	QUnsignedLongLong,
+	QUnsignedLong
+    };
+
     class Token{
     public:
 	const int line;
@@ -64,12 +73,30 @@ namespace Quarry {
 	    QUARRY_EXPORT GenericToken(const GenericToken<K,Y> &other): Token(other.line,other.column, tokenType), value(other.value) {}
     };
 
+    template <typename T>
+	class DecimalToken : public Token{
+    public:
+	const T value;
+	const IntegralType integralType;
+	QUARRY_EXPORT DecimalToken(int line, int column, T value, enum IntegralType iType): Token(line,column, NUMBER), value(value) , integralType(iType) {}
+	template <typename K>
+	    QUARRY_EXPORT DecimalToken(const DecimalToken<K> &other): Token(other.line,other.column, NUMBER), value(other.value), integralType(other.integralType) {}
+    };
+
     typedef GenericToken<int, KEYWORD> Keyword;
-
     typedef GenericToken<unsigned int, CHAR> CharToken;
-
     typedef GenericToken<std::string, STRING> StringToken;
-
+    typedef GenericToken<std::string, STRING> IdentToken;
+    typedef GenericToken<std::string, META_ID> MetaToken;
+    typedef GenericToken<unsigned int, META_ID> ReferredId; 
     typedef GenericToken<double, NUMBER> DoubleToken;
     typedef GenericToken<float, NUMBER> FloatToken;
+    typedef GenericToken<bool, BOOL> BoolToken;
+    typedef GenericToken<std::string, COMMENT> CommentToken;
+    typedef DecimalToken<unsigned long long> ULLToken;
+    typedef DecimalToken<unsigned long> ULToken;
+    typedef DecimalToken<long> LToken;
+    typedef DecimalToken<int> IToken;
+    typedef DecimalToken<unsigned int> UToken;
+    typedef DecimalToken<long long> LLToken;
 }

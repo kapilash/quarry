@@ -5,6 +5,7 @@
 #include <set>
 #include "QReader.h"
 #include "quarry.h"
+#include "QToken.h"
 
 namespace Quarry {
     enum PL {
