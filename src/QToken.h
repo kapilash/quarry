@@ -59,8 +59,11 @@ namespace Quarry {
 	const int column;
 	enum TokenType tokenType;
 
-	QUARRY_EXPORT Token(int line, int column, enum TokenType);
-	QUARRY_EXPORT Token(const Token &other);
+	QUARRY_EXPORT Token(int line, int column, enum TokenType): line(line), column(column), tokenType(tokenType)
+	{}
+	QUARRY_EXPORT Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
+	{
+	}
 	QUARRY_EXPORT virtual ~Token() {}
     };
 
@@ -85,6 +88,7 @@ namespace Quarry {
 
     typedef GenericToken<int, KEYWORD> Keyword;
     typedef GenericToken<unsigned int, CHAR> CharToken;
+    typedef GenericToken<std::string, ERROR> ErrorToken;
     typedef GenericToken<std::string, STRING> StringToken;
     typedef GenericToken<std::string, STRING> IdentToken;
     typedef GenericToken<std::string, META_ID> MetaToken;

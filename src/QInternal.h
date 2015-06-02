@@ -139,4 +139,11 @@ namespace Quarry {
     };
     QUARRY_EXPORT BaseLexer* getDblCharCommentLexer(char b, char s, char e);
     void printSlab(quarry_SlabPtr p, int index = -1) ;
+
+    typedef Token * (*Lexer)(QReader &reader, QContext &context);
+
+    QUARRY_EXPORT Token* spaceLexer(QReader &reader, QContext &context);
+
+    QUARRY_EXPORT Token* charLexer(QReader &reader, QContext &context);
+
 }

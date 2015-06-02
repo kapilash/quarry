@@ -484,6 +484,28 @@ namespace Quarry {
 	fillToken(outSlab, text);
 	return outSlab;
     }
+    template <char delimiter, char escape, enum TokenType tokenType>
+    Token* delimitedStrToken(QReader &reader, QContext &context){
+	auto c = reader.next();
+	auto col = reader.getCol();
+	auto line = reader.getLine();
+	std::string text;
+	text.push_back(c);
+	while (reader.hasMore()) {
+	    c = reader.next();
+	    text.push_back(c);
+	    if (c == delimiter) {
+		return new GenericToken<std::string, tokenType>(line, col, std::move(text)); 
+	    }
+	    else if (c == escape) {
+		if (reader.hasMore()) {
+		    text.push_back(reader.next());
+		}
+	    }
+	}
+	return new GenericToken<std::string, ERROR>(line, col, std::move(text)); 
+    }
+    
     quarry_SlabPtr SkipSpace :: scan(QReader &reader, QContext &context) const {
 	auto initLine = reader.getLine();
 	quarry_SlabPtr outSlab = new quarry_Slab();
@@ -501,6 +523,18 @@ namespace Quarry {
 	outSlab->data = nullptr;
 	return outSlab;
     }
+
+    Token*  spaceLexer(QReader &reader, QContext &context) {
+	auto line = reader.getLine();
+	auto col = reader.getCol();
+	reader.next();
+	
+	while(reader.hasMore() && reader.peekNext() < 33) {
+	    reader.next();
+	}
+	return new Token(line, col, WHITESPACE);
+    }
+
     
     void addPunctuationLexers (QContext &context) {
 	context.lexers[';'] = new SingleCharLexer (';', quarry_Punctuation);
