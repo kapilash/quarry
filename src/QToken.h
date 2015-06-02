@@ -59,7 +59,7 @@ namespace Quarry {
 	const int column;
 	enum TokenType tokenType;
 
-	QUARRY_EXPORT Token(int line, int column, enum TokenType): line(line), column(column), tokenType(tokenType)
+	QUARRY_EXPORT Token(int line, int column, enum TokenType t): line(line), column(column), tokenType(t)
 	{}
 	QUARRY_EXPORT Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
 	{
@@ -76,6 +76,14 @@ namespace Quarry {
 	    GenericToken(const GenericToken<K,Y> &other): Token(other.line,other.column, tokenType), value(other.value) {}
     };
 
+    class CharToken : public Token{
+    public:
+	const unsigned int value;
+	QUARRY_EXPORT CharToken(int line, int column, unsigned int value): Token(line,column, CHAR), value(value) {}
+	
+        QUARRY_EXPORT CharToken(const CharToken &other): Token(other.line,other.column, CHAR), value(other.value) {}
+    };
+
     template <typename T>
 	class DecimalToken : public Token{
     public:
@@ -87,7 +95,7 @@ namespace Quarry {
     };
 
     typedef GenericToken<int, KEYWORD> Keyword;
-    typedef GenericToken<unsigned int, CHAR> CharToken;
+
     typedef GenericToken<std::string, ERROR> ErrorToken;
     typedef GenericToken<std::string, STRING> StringToken;
     typedef GenericToken<std::string, STRING> IdentToken;

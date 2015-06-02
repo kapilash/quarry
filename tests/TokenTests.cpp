@@ -43,23 +43,18 @@ BOOST_AUTO_TEST_CASE(many_chars)
     Quarry::Lexer spaces = Quarry::spaceLexer;
     Quarry::Lexer nextChar = Quarry::charLexer;
 
-    int count = 1;
+    int count = 0;
     while(qr.hasMore()) {
-	Quarry::Token *slab = nextChar(qr, context);
-	std::cout << slab->tokenType  << " at " << slab->line << "," << slab->line << std::endl;
+	Quarry::CharToken *slab = dynamic_cast<Quarry::CharToken *>(nextChar(qr, context));
+	//	std::cout << slab->tokenType  << " with " << slab->value << " at " << slab->line << "," << slab->column << std::endl;
 	BOOST_CHECK(slab != nullptr);
-	/*
 	BOOST_CHECK(slab->tokenType == Quarry::CHAR);
-	if (count != 12)
-	    BOOST_CHECK(slab->value != 0);
+	BOOST_CHECK(slab->value >= 0);
 
-	//	std::cout << count << ":{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << "; text=" << slab->data <<"}" << std::endl ;
-        */
 	count++;
 	delete spaces(qr, context);
 	delete slab;
     }
-    BOOST_CHECK(count == 9);
 }
 
 BOOST_AUTO_TEST_CASE(idents_and_keywords)

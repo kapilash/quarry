@@ -1,9 +1,9 @@
 's' '\\' '\'' '\"' '"' '1' '\a' '\r' '\n' '\t' '\f' '\0' '\b' '\v' '\r'
 
-'\x0FF' '\x80' '\x8030' '\xC3' '\xc5' '\x098A' '\xFFFF' '\xF1' '\x99F' '\xA' '\xa' '\x1' '\xaa' '\xbb' \xff'
+'\x0FF' '\x80' '\x8030' '\xC3' '\xc5' '\x098A' '\xFFFF' '\xF1' '\x99F' '\xA' '\xa' '\x1' '\xaa' '\xbb' '\xff'
 
-'\u0080' '\u00FF' '\u0066' '\u8030' '\uAAAA' '\u0080' '\u0000' '\u0066' '\uaaaa' '\uEEEE' '\ueeee' '\uFFFF' '\ucccc' '\ubbbb' '\u9aaa'
+'\u0080' '\u00FF' '\u0066' '\u8030' '\uAAAA' '\u0080' '\u0001' '\u0066' '\uaaaa' '\uEEEE' '\ueeee' '\uFFFF' '\ucccc' '\ubbbb' '\u9aaa'
 
-'\U00000080' '\U0000000AA' '\U000000FF' '\U000000ff' '\U000000aa'
+'\U00000080' '\U000000AA' '\U000000FF' '\U000000ff' '\U000000aa'
 
 '´' 'ˆ' 'π' '¬' '≤' '≥' '…' '¶' '¨' '¥'

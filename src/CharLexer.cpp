@@ -58,7 +58,7 @@ namespace Quarry {
 
     inline bool isValidUtfTail (unsigned char uc) {
 	//192 = 128 + 64. that is, 11000000
-	return (uc & 192) != 128;
+	return (uc & 192) == 128;
     }
 
     inline bool isValidHexChar(unsigned char c) {
