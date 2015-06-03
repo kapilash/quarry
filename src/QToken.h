@@ -59,11 +59,8 @@ namespace Quarry {
 	const int column;
 	enum TokenType tokenType;
 
-	QUARRY_EXPORT Token(int line, int column, enum TokenType t): line(line), column(column), tokenType(t)
-	{}
-	QUARRY_EXPORT Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
-	{
-	}
+	QUARRY_EXPORT Token(int line, int column, enum TokenType t);
+	QUARRY_EXPORT Token(const Token &other);
 	QUARRY_EXPORT virtual ~Token() {}
     };
 
@@ -79,9 +76,33 @@ namespace Quarry {
     class CharToken : public Token{
     public:
 	const unsigned int value;
-	QUARRY_EXPORT CharToken(int line, int column, unsigned int value): Token(line,column, CHAR), value(value) {}
+	QUARRY_EXPORT CharToken(int line, int column, unsigned int value);
 	
-        QUARRY_EXPORT CharToken(const CharToken &other): Token(other.line,other.column, CHAR), value(other.value) {}
+        QUARRY_EXPORT CharToken(const CharToken &other);
+    };
+
+    class ErrorToken : public Token{
+    public:
+      const std::string value;
+      QUARRY_EXPORT ErrorToken(int line, int column, std::string text);
+      
+      QUARRY_EXPORT ErrorToken(const ErrorToken &other);
+    };
+
+    class StringToken : public Token{
+    public:
+      const std::string value;
+      QUARRY_EXPORT StringToken(int line, int column, std::string text);
+      
+      QUARRY_EXPORT StringToken(const StringToken &other);
+    };
+
+    class IdentifierToken : public Token{
+    public:
+      const std::string value;
+      QUARRY_EXPORT IdentifierToken(int line, int column, std::string text);
+      
+      QUARRY_EXPORT IdentifierToken(const IdentifierToken &other);
     };
 
     template <typename T>
@@ -96,9 +117,6 @@ namespace Quarry {
 
     typedef GenericToken<int, KEYWORD> Keyword;
 
-    typedef GenericToken<std::string, ERROR> ErrorToken;
-    typedef GenericToken<std::string, STRING> StringToken;
-    typedef GenericToken<std::string, STRING> IdentToken;
     typedef GenericToken<std::string, META_ID> MetaToken;
     typedef GenericToken<unsigned int, META_ID> ReferredId; 
     typedef GenericToken<double, NUMBER> DoubleToken;

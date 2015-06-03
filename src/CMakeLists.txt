@@ -13,6 +13,7 @@ set (SOURCES
     QMisc.cpp
     CharLexer.cpp
     QToken.h
+    QToken.cpp
     )
     
 add_library(quarry SHARED   ${SOURCES})
