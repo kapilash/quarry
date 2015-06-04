@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE (simple_string)
     }
     BOOST_CHECK(count == len);
     BOOST_CHECK(initLine == qr.getLine());
-    BOOST_CHECK( initCol + len == qr.getCol());
+    BOOST_CHECK( initCol == qr.getCol());
     delete []uc;
 }
 
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE (simple_file)
     }
     BOOST_CHECK(lineCount == 2);
     BOOST_CHECK(3 == qr.getLine());
-    BOOST_CHECK(cCount == qr.getCol());
+    BOOST_CHECK(1 == qr.getCol());
     BOOST_CHECK(aCount == 10);
     BOOST_CHECK(bCount == 10);
     BOOST_CHECK(cCount == 10);

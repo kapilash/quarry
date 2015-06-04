@@ -35,7 +35,7 @@ namespace Quarry {
             
 	inline int getLine() { return line;}
 
-	inline void incrementCol(int c) { column = column + c; }
+	inline void setColumn(int c) { column = c; }
 
 	QUARRY_EXPORT ~QReader();
     private:

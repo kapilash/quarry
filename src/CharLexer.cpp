@@ -170,6 +170,7 @@ namespace Quarry {
 		return new ErrorToken(line, col, "Invalid Char " + boost::lexical_cast<std::string>(code));
 	    }
 	    reader.next();
+	    reader.setColumn(col + 3);
 	    return new CharToken(line, col, code);
 	}
 	//c == '\'
@@ -177,6 +178,7 @@ namespace Quarry {
 	    return new ErrorToken(line, col, "unexpected end of file at '");
 	}
 	c = reader.next();
+	int newCol = col + 4;
 	switch(c) {
 	case '\\' : code = '\\'; break;
 	case '\'':  code = '\''; break;
@@ -201,7 +203,7 @@ namespace Quarry {
 	    if(!(count == 4 && hexToUnicode(hexStr, code))) {
 		return new ErrorToken(line,col, "Invalid Character");
 	    }
-	    
+	    newCol = col + 8; //2 quotes. \, U and 4 bytes.
 	    break;
 	}
 	case 'U': {
@@ -215,6 +217,7 @@ namespace Quarry {
 	    if(!(count == 8 && hexToUnicode(hexStr, code))) {
 		return new ErrorToken(line,col, "Invalid Character");
 	    }
+	    newCol = col + 12; //2 quotes. 1 \, 1 U and 8 bytes
 	    break;
 	}
 	case 'x': {
@@ -238,7 +241,7 @@ namespace Quarry {
 	}
 	// if we are here, we have read a valid escape sequence.
 	// Ensure that the next char is the closing quote and return.
-	
+	reader.setColumn(newCol);
 	if(reader.hasMore() && reader.peekNext() == '\'') {
 	    reader.next();
 	    return new CharToken(line, col, code);
