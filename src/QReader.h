@@ -25,10 +25,8 @@ namespace Quarry {
 	inline unsigned char next() {
 	    unsigned char c = bytes[position];
 	    position++;
-	    column++;
 	  if (c == '\n') {
 	      ++line;
-	      column = 0;
 	  }
 	  return c;
 	}
@@ -36,6 +34,8 @@ namespace Quarry {
 	inline int getCol() { return column;}
             
 	inline int getLine() { return line;}
+
+	inline void incrementCol(int c) { column = column + c; }
 
 	QUARRY_EXPORT ~QReader();
     private:
