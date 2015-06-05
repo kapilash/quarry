@@ -167,7 +167,7 @@ namespace Quarry {
 	    if (!reader.hasMore())
 		return new ErrorToken(line, col, "unexpected end of file");
 	    if(reader.peekNext() != '\'') {
-		return new ErrorToken(line, col, "Invalid Char " + boost::lexical_cast<std::string>(code));
+		return new ErrorToken(line, col, "Invalid Char " );
 	    }
 	    reader.next();
 	    reader.setColumn(col + 3);
@@ -246,7 +246,7 @@ namespace Quarry {
 	    reader.next();
 	    return new CharToken(line, col, code);
 	}
-	return new ErrorToken(line, col, "invalid character " + boost::lexical_cast<std::string>(code));
+	return new ErrorToken(line, col, "invalid character ");
     }
 
       
