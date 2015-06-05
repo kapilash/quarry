@@ -146,4 +146,5 @@ namespace Quarry {
 
     QUARRY_EXPORT Token* charLexer(QReader &reader, QContext &context);
 
+    QUARRY_EXPORT Token* cstringLexer(QReader &reader, QContext &context);
 }

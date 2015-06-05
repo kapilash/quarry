@@ -256,12 +256,12 @@ namespace Quarry {
 	auto c = reader.next();
 
 	int additional = 0;
-	char32_t code;
+	char32_t code = 0;
 	std::u32string text;
 	while (reader.hasMore() && reader.peekNext() != '"') {
 	  	c = reader.next();
 		if ( c != '\\' ) {
-		  char32_t code = 0;
+		  code = 0;
 		  auto ret = readCodePoint(reader, c, code);
 		  if (ret == InvalidUTFByte) {
 		    return new ErrorToken(line, col, "invalid UTF-8 byte");
@@ -347,6 +347,6 @@ namespace Quarry {
 	}
 	reader.next();
 	reader.setColumn(col + text.length() + additional);
-	return new CharToken(line, col, code);
+	return new StringToken(line, col, std::move(text));
     }
 }

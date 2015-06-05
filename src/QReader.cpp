@@ -15,6 +15,16 @@ namespace Quarry {
         return fopen(fileName,"rb");
 #endif
     }
+
+  std::size_t skipBom(std::size_t position, std::size_t length,const unsigned char *bytes) {
+    if(position + 3 < length) {
+      if(bytes[position] == 239 && bytes[position+1] == 187 && bytes[position+2] == 191) {
+	return ( position + 3);
+      }
+    }
+    return position;
+  }
+
     
     QReader::QReader(const char *fileName){
       file.open(fileName);
@@ -23,9 +33,10 @@ namespace Quarry {
       }
       line = 1;
       column = 1;
-      position = 0;
+     
       length = file.size();
       bytes = reinterpret_cast<const unsigned char *>(file.data());
+      position = skipBom(0, length, bytes);
     }
 
     QReader::QReader(const unsigned char *byteArray, size_t arrayLength, int l = 1, int c = 1){
@@ -35,8 +46,9 @@ namespace Quarry {
         column = c;
 	position = 0;
 	length = arrayLength;
+	position = skipBom(0, length, bytes);
     }
-    
+  
     QReader::~QReader() {
       if (file.is_open()) {
 	file.close();
