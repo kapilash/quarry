@@ -75,8 +75,8 @@ namespace Quarry {
 
     class CharToken : public Token{
     public:
-	const unsigned int value;
-	QUARRY_EXPORT CharToken(int line, int column, unsigned int value);
+	const char32_t value;
+	QUARRY_EXPORT CharToken(int line, int column, char32_t value);
 	
         QUARRY_EXPORT CharToken(const CharToken &other);
     };
@@ -91,8 +91,8 @@ namespace Quarry {
 
     class StringToken : public Token{
     public:
-      const std::string value;
-      QUARRY_EXPORT StringToken(int line, int column, std::string text);
+      const std::u32string value;
+      QUARRY_EXPORT StringToken(int line, int column, std::u32string text);
       
       QUARRY_EXPORT StringToken(const StringToken &other);
     };

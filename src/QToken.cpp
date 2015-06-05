@@ -22,7 +22,7 @@ namespace Quarry {
   {
   }
 
-  CharToken::CharToken(int line, int column, unsigned int value): Token(line,column, CHAR), value(value)
+  CharToken::CharToken(int line, int column, char32_t value): Token(line,column, CHAR), value(value)
   {
   }
 	
@@ -39,7 +39,7 @@ namespace Quarry {
   }
 
   
-  StringToken::StringToken(int line, int column, std::string text): Token(line,column, STRING), value(text)
+  StringToken::StringToken(int line, int column, std::u32string text): Token(line,column, STRING), value(text)
   {
   }
 	

@@ -67,7 +67,7 @@ namespace Quarry {
     
     // this method is called after the first byte has been read and has already been decided that this is 
     // a simple-character
-    CharErrorCode readCodePoint(QReader &reader, unsigned char firstByte, unsigned int &codePoint) {
+    CharErrorCode readCodePoint(QReader &reader, unsigned char firstByte, char32_t &codePoint) {
 
 	codePoint = 0;
 	if (firstByte < 128) {
@@ -133,9 +133,9 @@ namespace Quarry {
 	return InvalidUTFByte;
     }
 
-    bool hexToUnicode(const std::string &bytes, unsigned int &code){
+    bool hexToUnicode(const std::string &bytes, char32_t &code){
 	try {
-	    unsigned int x = std::stoul(bytes, nullptr, 16);
+	    char32_t x = std::stoul(bytes, nullptr, 16);
 	    code = x;
 	    return true;
 	}
@@ -154,9 +154,9 @@ namespace Quarry {
 	    return new ErrorToken(line, col, std::string("EOF after quote"));
 	}
 	c = reader.next();
-	unsigned int code;
+	char32_t code;
 	if ( c != '\\' ) {
-	    unsigned int code = 0;
+	    code = 0;
 	    auto ret = readCodePoint(reader, c, code);
 	    if (ret == InvalidUTFByte) {
 		return new ErrorToken(line, col, "invalid UTF-8 byte");
@@ -247,5 +247,106 @@ namespace Quarry {
 	    return new CharToken(line, col, code);
 	}
 	return new ErrorToken(line, col, "invalid character " + boost::lexical_cast<std::string>(code));
+    }
+
+      
+  Token* cstringLexer(QReader &reader, QContext &context) {
+	auto col = reader.getCol();
+	auto line = reader.getLine();
+	auto c = reader.next();
+
+	int additional = 0;
+	char32_t code;
+	std::u32string text;
+	while (reader.hasMore() && reader.peekNext() != '"') {
+	  	c = reader.next();
+		if ( c != '\\' ) {
+		  char32_t code = 0;
+		  auto ret = readCodePoint(reader, c, code);
+		  if (ret == InvalidUTFByte) {
+		    return new ErrorToken(line, col, "invalid UTF-8 byte");
+		  }
+		  if (ret == CharEOF) {
+		    return new ErrorToken(line, col, "unexpected end of file");
+		  }
+		  text.push_back(code);
+		}
+		else {
+		  	if (!reader.hasMore()) {
+			  return new ErrorToken(line, col, "unexpected end of file at '");
+			}
+
+			c = reader.next();
+			additional++;
+			switch(c) {
+			case '\\' : code = '\\'; break;
+			case '\'':  code = '\''; break;
+			case '"' :  code = '"' ; break;
+			case '0':   code =    0; break;
+			case 'a':   code = '\a'; break;
+			case 'n':   code = '\n' ;break;
+			case 'b':   code = '\b'; break;
+			case 't':   code = '\t'; break;
+			case 'f':   code = '\f'; break;
+			case 'r':   code = '\r'; break;
+			case 'v':   code = '\v'; break;
+			case 'u':  {
+			  std::string hexStr("0x");
+			  int count = 0;
+			  // here, read four bytes and convert them into a hexadecimal value
+
+			  while ((count < 4) && reader.hasMore()) {
+			    hexStr.append(1, reader.next());
+			    count++;
+			  }
+			  if(!(count == 4 && hexToUnicode(hexStr, code))) {
+			    return new ErrorToken(line,col, "Invalid Character");
+			  }
+			  additional = additional + 4;
+			  break;
+			}
+			case 'U': {
+			  // here, read eight bytes and convert them into a hexadeimal value
+			  std::string hexStr("0x");
+			  int count = 0;
+			  while ((count < 8) && reader.hasMore()) {
+			    hexStr.append(1, reader.next());
+			    count++;
+			  }
+			  if(!(count == 8 && hexToUnicode(hexStr, code))) {
+			    return new ErrorToken(line,col, "Invalid Character");
+			  }
+			  additional = additional + 8;
+			  break;
+			}
+			case 'x': {
+			  std::string hexStr("0x");
+			  int count = 0;
+			  // read upto four 0-9A-Fa-f
+			  while ((count < 4) && reader.hasMore() && isValidHexChar(reader.peekNext())) {
+			    hexStr.append(1, reader.next());
+			    count++;
+			  }
+			  if(!hexToUnicode(hexStr, code)) {
+			    return new ErrorToken(line, col, "Invalid Character");
+			  }
+			  additional = additional + count;
+			  break;
+			}
+			default:
+			  std::string message = "invalid escape sequence -\\" ;
+			  message.append(1, c);
+			  return new ErrorToken(line, col, message);
+			}
+			text.push_back(code);
+		}
+	}
+	if (!reader.hasMore()) {
+	  // unexpected EOF
+	  return new ErrorToken(line, col, "runaway string");
+	}
+	reader.next();
+	reader.setColumn(col + text.length() + additional);
+	return new CharToken(line, col, code);
     }
 }
