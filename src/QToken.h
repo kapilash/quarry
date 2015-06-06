@@ -46,9 +46,6 @@ namespace Quarry {
     };
 
     enum QNumberType {
-	QComplexFloat,
-	QComplexDouble,
-	QComplexLongDouble,
 	QLongDouble,
 	QDouble,
 	QFloat,
@@ -58,7 +55,6 @@ namespace Quarry {
 	QUnsignedInt,
 	QUnsignedLong,
 	QUnsignedLongLong,
-	QRational,
     };
 
     class Token{
@@ -105,5 +101,18 @@ namespace Quarry {
     typedef GenericToken<unsigned int, META_ID> ReferredId; 
     typedef GenericToken<bool, BOOL> BoolToken;
     typedef GenericToken<std::string, COMMENT> CommentToken;
+
+    typedef NumberToken<unsigned int, QUnsignedInt> UIToken;
+    typedef NumberToken<unsigned long, QUnsignedLong> ULToken;
+    typedef NumberToken<unsigned long long, QUnsignedLongLong> ULLToken;
+
+    typedef NumberToken<float, QFloat> FlToken;
+    typedef NumberToken<double, QDouble> DblToken;
+    typedef NumberToken<long double, QLongDouble> LDblToken;
+
+    typedef NumberToken<int, QInt> IntToken;
+    typedef NumberToken<long, QLong> LongToken;
+    typedef NumberToken<long long, QLongLong> LLToken;
+
     typedef NumberToken<unsigned int, QUnsignedInt> UnsignedIntToken;
 }

@@ -171,8 +171,7 @@ namespace Quarry {
 	    }
 	    reader.next();
 	    reader.setColumn(col + 3);
-	    GenericToken<char32_t, CHAR> *token = new GenericToken<char32_t, CHAR>(line, col, code);
-	    return token;
+	    return new CharToken(line, col, code);
 	}
 	//c == '\'
 	if (!reader.hasMore()) {
@@ -245,8 +244,7 @@ namespace Quarry {
 	reader.setColumn(newCol);
 	if(reader.hasMore() && reader.peekNext() == '\'') {
 	    reader.next();
-	    GenericToken<char32_t, CHAR> *token = new GenericToken<char32_t, CHAR>(line, col, code);
-	    return token;
+	    return new CharToken(line, col, code);
 	}
 	return new ErrorToken(line, col, "invalid character ");
     }
