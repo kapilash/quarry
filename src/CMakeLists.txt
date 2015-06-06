@@ -12,6 +12,7 @@ set (SOURCES
     QuarryMaps.cpp
     QMisc.cpp
     Characters.cpp
+    Numbers.cpp
     QToken.h
     QToken.cpp
     )

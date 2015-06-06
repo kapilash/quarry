@@ -10,29 +10,65 @@
 #include <algorithm>
 #include <cstdlib>
 #include <locale>
-
+#include <boost/lexical_cast.hpp>
 
 BOOST_AUTO_TEST_CASE(many_numbers)
 {
     Quarry::QReader qr("Numbers.txt");
     Quarry::QContext context(Quarry::C);
     Quarry::Lexer spaces = Quarry::spaceLexer;
-    Quarry::NumberLexer numbers;
+    Quarry::Lexer numbers = Quarry::numberLexer;
     int count = 0;
+
     while(qr.hasMore()) {
-	auto slab = numbers.scan(qr, context);
+	auto slab = numbers(qr, context);
 	BOOST_CHECK(slab != nullptr);
-	BOOST_CHECK(slab->slabType == quarry_Numbers);
-	BOOST_CHECK(slab->slabLength != 0);
-	BOOST_CHECK(slab->data != nullptr);
+	BOOST_CHECK(slab->tokenType == Quarry::NUMBER);
+	if (slab->tokenType == Quarry::NUMBER) {
+	    Quarry::NumericalToken *nt = dynamic_cast<Quarry::NumericalToken *>(slab);
+	    BOOST_CHECK(nt != nullptr);
+	    BOOST_CHECK(nt->text.length() > 0);
+
+	    switch(nt->numberType) {
+	    case Quarry::QLongDouble : 
+		BOOST_CHECK(dynamic_cast<Quarry::LDblToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QDouble : 
+		BOOST_CHECK(dynamic_cast<Quarry::DblToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QFloat :
+		BOOST_CHECK(dynamic_cast<Quarry::FlToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QUnsignedInt :
+		BOOST_CHECK(dynamic_cast<Quarry::UIntToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QUnsignedLong :
+		BOOST_CHECK(dynamic_cast<Quarry::ULongToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QUnsignedLongLong :
+		BOOST_CHECK(dynamic_cast<Quarry::ULongLongToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QLongLong :
+		BOOST_CHECK(dynamic_cast<Quarry::LongLongToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QLong :
+		BOOST_CHECK(dynamic_cast<Quarry::LongToken *>(slab) != nullptr);
+		break;
+	    case Quarry::QInt :
+		BOOST_CHECK(dynamic_cast<Quarry::IntToken *>(slab) != nullptr);
+		break;
+
+	    default:
+		std::cout << "unknown numberType " << nt->numberType << std::endl;
+	    }
+	}
 	// Quarry::printSlab(slab, count);
 	//	std::cout << count << ":{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << "; text=" << slab->data <<"}" << std::endl ;
 	count++;
 	delete spaces(qr, context);
-	delete [](slab->data);
 	delete slab;
     }
-    BOOST_CHECK(count == 32);
+    std::cout << "validated " << count  << " numbers " << std::endl;
 }
 
 
@@ -55,6 +91,7 @@ BOOST_AUTO_TEST_CASE(many_chars)
 	delete spaces(qr, context);
 	delete slab;
     }
+    std::cout << "validated " << count  << " characters " << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(str_literals)
@@ -75,6 +112,7 @@ BOOST_AUTO_TEST_CASE(str_literals)
 	delete spaces(qr, context);
 	delete slab;
     }
+    std::cout << "validated " << count  << " string literals " << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(idents_and_keywords)

@@ -77,18 +77,25 @@ namespace Quarry {
 	}
     };
 
-    template <typename T, QNumberType nt>
-    class NumberToken : public Token {
+    class NumericalToken : public Token {
     public:
 	const QNumberType numberType;
-	const T value;
 	const std::string text;
-
-	QUARRY_EXPORT NumberToken(int line, int column, const std::string &txt)
-	    : Token(line, column, NUMBER),
-	    text(txt),
+	QUARRY_EXPORT NumericalToken(int line, int column, QNumberType nt, const std::string &s)
+	    :Token(line, column, NUMBER),
 	    numberType(nt),
-	    value(boost::lexical_cast<T>(txt)) {}
+	    text(s)
+	 {
+	 }
+    };
+    
+    template <typename T, QNumberType nt>
+    class NumberToken : public NumericalToken {
+    public:
+	const T value;
+	QUARRY_EXPORT NumberToken(int line, int column, const std::string &txt, const T v)
+	    : NumericalToken(line, column, nt, txt),
+	    value(v) {}
 	
     };
 
@@ -102,9 +109,9 @@ namespace Quarry {
     typedef GenericToken<bool, BOOL> BoolToken;
     typedef GenericToken<std::string, COMMENT> CommentToken;
 
-    typedef NumberToken<unsigned int, QUnsignedInt> UIToken;
-    typedef NumberToken<unsigned long, QUnsignedLong> ULToken;
-    typedef NumberToken<unsigned long long, QUnsignedLongLong> ULLToken;
+    typedef NumberToken<unsigned int, QUnsignedInt> UIntToken;
+    typedef NumberToken<unsigned long, QUnsignedLong> ULongToken;
+    typedef NumberToken<unsigned long long, QUnsignedLongLong> ULongLongToken;
 
     typedef NumberToken<float, QFloat> FlToken;
     typedef NumberToken<double, QDouble> DblToken;
@@ -112,7 +119,5 @@ namespace Quarry {
 
     typedef NumberToken<int, QInt> IntToken;
     typedef NumberToken<long, QLong> LongToken;
-    typedef NumberToken<long long, QLongLong> LLToken;
-
-    typedef NumberToken<unsigned int, QUnsignedInt> UnsignedIntToken;
+    typedef NumberToken<long long, QLongLong> LongLongToken;
 }

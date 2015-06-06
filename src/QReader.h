@@ -37,6 +37,8 @@ namespace Quarry {
 
 	inline void setColumn(int c) { column = c; }
 
+	inline void addColumns(int c) { column += c; }
+
 	QUARRY_EXPORT ~QReader();
     private:
 	boost::iostreams::mapped_file_source file;
