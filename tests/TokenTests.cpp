@@ -67,8 +67,6 @@ BOOST_AUTO_TEST_CASE(str_literals)
     int count = 0;
     while(qr.hasMore()) {
       	Quarry::StringToken *slab = dynamic_cast<Quarry::StringToken *>(nextString(qr, context));
-      //Quarry::Token *slab = nextString(qr, context);
-	std::cout << slab->tokenType  << " with " << slab->value.length() << " at " << slab->line << "," << slab->column << std::endl;
 	BOOST_CHECK(slab != nullptr);
 	BOOST_CHECK(slab->tokenType == Quarry::STRING);
 	BOOST_CHECK(slab->value.length() >= 0);

@@ -5,7 +5,7 @@
 #include "quarry_export.h"
 
 namespace Quarry {
-    QUARRY_EXPORT class QReader{
+    class QReader{
     private:
 	QUARRY_EXPORT void read();
     public:

@@ -16,44 +16,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 namespace Quarry {
-  Token:: Token(int line, int column, enum TokenType t): line(line), column(column), tokenType(t)
-  {}
-  Token:: Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
-  {
-  }
+    Token:: Token(int line, int column, enum TokenType t): line(line), column(column), tokenType(t)
+    {
 
-  CharToken::CharToken(int line, int column, char32_t value): Token(line,column, CHAR), value(value)
-  {
-  }
-	
-  CharToken::CharToken(const CharToken &other): Token(other.line,other.column, CHAR), value(other.value)
-  {
-  }
-
-  ErrorToken::ErrorToken(int line, int column, std::string text): Token(line,column, ERROR), value(text)
-  {
-  }
-	
-  ErrorToken::ErrorToken(const ErrorToken &other): Token(other.line,other.column, ERROR), value(other.value)
-  {
-  }
-
-  
-  StringToken::StringToken(int line, int column, std::u32string text): Token(line,column, STRING), value(text)
-  {
-  }
-	
-  StringToken::StringToken(const StringToken &other): Token(other.line,other.column, STRING), value(other.value)
-  {
-  }
-
-  
-  IdentifierToken::IdentifierToken(int line, int column, std::string text): Token(line,column, IDENT), value(text)
-  {
-  }
-	
-  IdentifierToken::IdentifierToken(const IdentifierToken &other): Token(other.line,other.column, IDENT), value(other.value)
-  {
-  }
+    }
+    Token:: Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
+    {
+    }
 
 }

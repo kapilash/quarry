@@ -27,14 +27,14 @@ namespace Quarry {
     };
 
     
-    QUARRY_EXPORT class BaseLexer {
+    class BaseLexer {
     public:
 	BaseLexer(){}
 	virtual quarry_SlabPtr scan(QReader &reader, QContext &context) const = 0;
 	virtual ~BaseLexer(){}
     };
     
-    QUARRY_EXPORT class QContext{
+    class QContext{
     public:
 	friend void addPunctuationLexers (QContext &context);
 	friend void addGroupLexers (QContext &context) ;

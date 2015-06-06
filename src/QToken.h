@@ -13,8 +13,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #pragma once
 
 #include <string>
-#include <boost/functional/hash.hpp>
+#include <boost/lexical_cast.hpp>
 #include "quarry_export.h"
+#include <iostream>
 
 namespace Quarry {
     enum TokenType {
@@ -64,71 +65,45 @@ namespace Quarry {
     public:
 	const int line;
 	const int column;
-	enum TokenType tokenType;
+	const TokenType tokenType;
 
 	QUARRY_EXPORT Token(int line, int column, enum TokenType t);
 	QUARRY_EXPORT Token(const Token &other);
 	QUARRY_EXPORT virtual ~Token() {}
     };
 
-    template <typename T, enum TokenType tokenType>
+    template <typename T, TokenType genericType >
 	class GenericToken : public Token{
     public:
-	const T value;
-	QUARRY_EXPORT GenericToken(int line, int column, T value): Token(line,column, tokenType), value(value) {}
-	template <typename K, enum TokenType Y>
-	    GenericToken(const GenericToken<K,Y> &other): Token(other.line,other.column, tokenType), value(other.value) {}
+        const T value;
+         QUARRY_EXPORT GenericToken(int line, int column,const T &v)
+               : Token(line, column, genericType), value(v) {
+	}
     };
 
-    class CharToken : public Token{
-    public:
-	const char32_t value;
-	QUARRY_EXPORT CharToken(int line, int column, char32_t value);
-	
-        QUARRY_EXPORT CharToken(const CharToken &other);
-    };
-
-    class ErrorToken : public Token{
-    public:
-      const std::string value;
-      QUARRY_EXPORT ErrorToken(int line, int column, std::string text);
-      
-      QUARRY_EXPORT ErrorToken(const ErrorToken &other);
-    };
-
-    class StringToken : public Token{
-    public:
-      const std::u32string value;
-      QUARRY_EXPORT StringToken(int line, int column, std::u32string text);
-      
-      QUARRY_EXPORT StringToken(const StringToken &other);
-    };
-
-    class IdentifierToken : public Token{
-    public:
-      const std::string value;
-      QUARRY_EXPORT IdentifierToken(int line, int column, std::string text);
-      
-      QUARRY_EXPORT IdentifierToken(const IdentifierToken &other);
-    };
-
+    template <typename T, QNumberType nt>
     class NumberToken : public Token {
     public:
-	const long double asDouble;
-	const long long asLong;
-	const bool isSigned;
-	const bool isExact;
-	QUARRY_EXPORT NumberToken(int line, int column, long double d);
-	QUARRY_EXPORT NumberToken(int line, int column, long long l, bool hasSign=false);
-	QUARRY_EXPORT NumberToken(const NumberToken &other);
+	const QNumberType numberType;
+	const T value;
+	const std::string text;
+
+	QUARRY_EXPORT NumberToken(int line, int column, const std::string &txt)
+	    : Token(line, column, NUMBER),
+	    text(txt),
+	    numberType(nt),
+	    value(boost::lexical_cast<T>(txt)) {}
+	
     };
 
     typedef GenericToken<int, KEYWORD> Keyword;
-
-    typedef GenericToken<std::string, META_ID> MetaToken;
+    typedef GenericToken<std::string, ERROR> ErrorToken;
+    typedef GenericToken<std::u32string, STRING> StringToken;
+    typedef GenericToken<std::u32string, IDENT> IdentifierToken;
+    typedef GenericToken<char32_t, CHAR> CharToken;
+    typedef GenericToken<std::u32string, META_ID> MetaToken;
     typedef GenericToken<unsigned int, META_ID> ReferredId; 
-    typedef GenericToken<double, NUMBER> DoubleToken;
-    typedef GenericToken<float, NUMBER> FloatToken;
     typedef GenericToken<bool, BOOL> BoolToken;
     typedef GenericToken<std::string, COMMENT> CommentToken;
+    typedef NumberToken<unsigned int, QUnsignedInt> UnsignedIntToken;
 }
