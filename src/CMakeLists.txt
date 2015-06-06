@@ -11,7 +11,7 @@ set (SOURCES
     quarry.h
     QuarryMaps.cpp
     QMisc.cpp
-    CharLexer.cpp
+    Characters.cpp
     QToken.h
     QToken.cpp
     )
