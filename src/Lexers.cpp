@@ -117,6 +117,69 @@ namespace Quarry {
 	outSlab->slabMD = 1;
 	return outSlab;
     }
+    // this is expected to be called only after the first has already been consumed.
+    template <char begin='/', char second = '*' >
+        Token *genericBlockComment(QReader &reader, QContext &context) {
+            int line = reader.getLine();
+            int col = reader.getCol()-1;
+            std::string text;
+            int count = 1;
+            reader.next();
+
+            while (reader.hasMore()) {
+                auto c = reader.next();
+                if ( c > 127) {
+                    // this is the beginning of a UTF8 value
+                    while (reader.hasMore() && reader.peekNext() > 127) {
+                        text.push_back(reader.next());
+                    }
+                }
+                else if ( c == '\n') {
+                    col = 0;
+                    continue;
+                }
+                else if (c == second && reader.hasMore() && (reader.peekNext() == begin)) {
+                    col++;
+                    count--;
+                    reader.next();
+                    if (count < 1) {
+                        break;
+                    }
+                    text.push_back(c); text.push_back(begin);
+                }
+                else if (c == begin && reader.hasMore() && (reader.peekNext() == second)) {
+                    text.push_back(c); text.push_back(reader.next());
+                    col++;
+                    count++;
+                }
+                else {
+                    text.push_back(c);
+                }
+                col++;
+            }
+            return new CommentToken(line, col, text);
+        }
+
+    Token* csComments(QReader &reader, QContext &context) {
+        auto col = reader.next();
+        if (reader.hasMore() && reader.peekNext() == '/') {
+            std::string text("//");
+            while (reader.hasMore() && reader.peekNext() != '\n') {
+                text.push_back(reader.next());
+            }
+            if (reader.hasMore())
+                reader.next();
+            return new CommentToken(reader.getLine(), col, text);
+        }
+        else if (reader.hasMore() && reader.peekNext() == '*') {
+            return genericBlockComment<>(reader, context);
+        }
+        else {
+            std::string t;
+            t.push_back(reader.next());
+            return new Operator(reader.getLine(), col, context.operatorIndex(t));
+        }
+    }
 
     quarry_SlabPtr CLikeComment::scan(QReader &reader, QContext &context) const {
 	quarry_SlabPtr outSlab = new quarry_Slab();

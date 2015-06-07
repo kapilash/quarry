@@ -122,6 +122,9 @@ namespace Quarry {
 	auto c = reader.next();
 	std::string text;
 	text.push_back(c);
+    if (c == '-' && (!reader.hasMore() || (reader.peekNext() < '0') || (reader.peekNext() > '9'))) {
+            return new Operator(reader.getLine(), reader.getCol(), context.operatorIndex(text));
+    }
 	if (c != '0') {
 	    while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
 		text.push_back(reader.next());

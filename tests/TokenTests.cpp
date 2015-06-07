@@ -62,6 +62,9 @@ BOOST_AUTO_TEST_CASE(many_numbers)
 		std::cout << "unknown numberType " << nt->numberType << std::endl;
 	    }
 	}
+    else {
+        std::cout << "failure at (" << slab->line << "," << slab->column << ") found " << slab->tokenType << std::endl ;
+    }
 	// Quarry::printSlab(slab, count);
 	//	std::cout << count << ":{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << "; text=" << slab->data <<"}" << std::endl ;
 	count++;

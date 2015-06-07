@@ -100,6 +100,8 @@ namespace Quarry {
     };
 
     typedef GenericToken<int, KEYWORD> Keyword;
+    typedef GenericToken<int, OPERATOR> Operator;
+    
     typedef GenericToken<std::string, ERROR> ErrorToken;
     typedef GenericToken<std::u32string, STRING> StringToken;
     typedef GenericToken<std::u32string, IDENT> IdentifierToken;
@@ -109,6 +111,7 @@ namespace Quarry {
     typedef GenericToken<bool, BOOL> BoolToken;
     typedef GenericToken<std::string, COMMENT> CommentToken;
 
+    
     typedef NumberToken<unsigned int, QUnsignedInt> UIntToken;
     typedef NumberToken<unsigned long, QUnsignedLong> ULongToken;
     typedef NumberToken<unsigned long long, QUnsignedLongLong> ULongLongToken;
