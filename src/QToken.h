@@ -104,9 +104,9 @@ namespace Quarry {
     
     typedef GenericToken<std::string, ERROR> ErrorToken;
     typedef GenericToken<std::u32string, STRING> StringToken;
-    typedef GenericToken<std::u32string, IDENT> IdentifierToken;
+    typedef GenericToken<std::string, IDENT> IdentifierToken;
     typedef GenericToken<char32_t, CHAR> CharToken;
-    typedef GenericToken<std::u32string, META_ID> MetaToken;
+    typedef GenericToken<std::string, META_ID> MetaToken;
     typedef GenericToken<unsigned int, META_ID> ReferredId; 
     typedef GenericToken<bool, BOOL> BoolToken;
     typedef GenericToken<std::string, COMMENT> CommentToken;

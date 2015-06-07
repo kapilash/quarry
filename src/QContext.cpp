@@ -8,7 +8,7 @@ namespace Quarry{
 	
     QContext::QContext(enum PL p) {
 	for (int i=0; i<256; i++) {
-	    lexers[i] = nullptr;
+	    lexers.push_back(nullptr);
 	}
 	if (p  == C ) {
 	    collectCKeywords(keywords);
@@ -23,8 +23,6 @@ namespace Quarry{
     }
 
     QContext::~QContext(){
-	for (int i=0; i<256; i++) {
-	    delete lexers[i];
-	}
+
     }
 }

@@ -349,4 +349,44 @@ namespace Quarry {
 	reader.setColumn(col + text.length() + additional);
 	return new StringToken(line, col, std::move(text));
     }
+
+    
+    // this is expected to be called only after the first has already been consumed.
+    Token *genericIdLexer(bool (isValidIdentChar)(unsigned char), QReader &reader, QContext &context) {
+            int line = reader.getLine();
+            int col = 1;
+            std::string text;
+            int count = 1;
+            text.push_back(reader.next());
+	    auto c = reader.peekNext();
+            while (reader.hasMore() && isValidIdentChar(c)) {
+		text.push_back(reader.next());
+		if (c > 127) {
+		    while( reader.hasMore() && reader.peekNext() > 127) {
+			text.push_back(reader.next());
+		    }
+		}
+		col++;
+		c = reader.peekNext();
+	    }
+	    reader.addColumns(col);
+	    auto index = context.keywordIndex(text);
+	    if (index < 0)
+	    return new IdentifierToken(line, reader.getCol(), text);
+
+	    return new Keyword(line,col, index);
+    }
+
+    static bool isCIdentChar(unsigned char b) {
+	return ( b >= 'a' && b <= 'z')  
+	    || (b >= 'A' && b <= 'Z')
+	    || (b >= '0' && b <= '9')
+	    || (b == '_')
+	    || (b == '$');
+							
+    }
+
+    Token *csIdLexer(QReader &reader, QContext &context) {
+	return genericIdLexer(isCIdentChar,reader, context);
+    }
 }
