@@ -53,6 +53,14 @@ namespace Quarry {
 	std::vector<Lexer> lexers;
     };
 
+    template<TokenType t>
+	Token* singleCharLexer(QReader &reader, QContext &context) {
+	int col = reader.getCol();
+	int line = reader.getLine();
+	reader.next();
+	return new Token(line, col, t);
+    }
+
     QUARRY_EXPORT Token* spaceLexer(QReader &reader, QContext &context);
 
     QUARRY_EXPORT Token* charLexer(QReader &reader, QContext &context);
@@ -63,5 +71,7 @@ namespace Quarry {
 
     QUARRY_EXPORT Token* csComments(QReader &reader, QContext &context);
 
-    QUARRY_EXPORT Token* csIdLexer(QReader &reader, QContext &context);    
+    QUARRY_EXPORT Token* csIdLexer(QReader &reader, QContext &context);
+
+    QUARRY_EXPORT Token *csOperatorLexer(QReader &reader, QContext &context);
 }

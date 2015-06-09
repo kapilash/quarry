@@ -60,8 +60,22 @@ struct quarry_Slab_
   u_int32_t slabMD;
 };
 
+
+struct quarry_Token_
+{
+    int tokenType;
+    int tokenLength;
+    char *text;
+    unsigned char info[8];
+    unsigned char extra[8];
+};
+
 typedef struct quarry_Slab_ quarry_Slab;
 typedef struct quarry_Slab_ *quarry_SlabPtr;
+
+
+typedef struct quarry_Token_ quarry_Token;
+typedef struct quarry_Token_ *quarry_TokenPtr;
 
 enum  quarry_PL_{
   quarry_Gen,

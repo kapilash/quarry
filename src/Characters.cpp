@@ -351,7 +351,6 @@ namespace Quarry {
     }
 
     
-    // this is expected to be called only after the first has already been consumed.
     Token *genericIdLexer(bool (isValidIdentChar)(unsigned char), QReader &reader, QContext &context) {
             int line = reader.getLine();
             int col = 1;
@@ -386,7 +385,51 @@ namespace Quarry {
 							
     }
 
+    class OperatorLexer {
+    private:
+	bool isValidOper(unsigned char c) {
+	    auto i = operators.find(c);
+	    return (i != std::string::npos);		
+	}
+	
+    public:
+	const std::string operators;
+	OperatorLexer(const std::string &s) : operators(s) {
+	}
+
+	
+	Token *scan(QReader &reader, QContext &context) {
+	    int line = reader.getLine();
+            int col = 1;
+            std::string text;
+            int count = 1;
+            text.push_back(reader.next());
+	    auto c = reader.peekNext();
+            while (reader.hasMore() && isValidOper(c)) {
+		text.push_back(reader.next());
+		if (c > 127) {
+		    while( reader.hasMore() && reader.peekNext() > 127) {
+			text.push_back(reader.next());
+		    }
+		}
+		col++;
+		c = reader.peekNext();
+	    }
+	    reader.addColumns(col);
+	    auto index = context.keywordIndex(text);
+	    if (index < 0)
+	    return new OperatorId(line, reader.getCol(), text);
+
+	    return new Operator(line,col, index);
+	}
+    };
+
     Token *csIdLexer(QReader &reader, QContext &context) {
 	return genericIdLexer(isCIdentChar,reader, context);
+    }
+
+    Token *csOperatorLexer(QReader &reader, QContext &context) {
+	OperatorLexer lex("!#$%&*+-/<=>@^_`~");
+	return lex.scan(reader, context);
     }
 }
