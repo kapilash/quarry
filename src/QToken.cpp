@@ -28,9 +28,11 @@ namespace Quarry {
     void fillTokenContent(quarry_TokenPtr tokenPtr, const std::u32string &str)
     {
     }
+ #ifndef _MSC_VER
     void fillTokenContent(quarry_TokenPtr tokenPtr, const char32_t wideChar)
     {
     }
+  #endif
     void fillTokenContent(quarry_TokenPtr tokenPtr, const bool b)
     {
     }

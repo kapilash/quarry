@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE comments_test test
 #include <boost/test/unit_test.hpp>
-
+#define QUARRY_EXPORT
 #include "QReader.h"
 #include "QInternal.h"
 #include <string>

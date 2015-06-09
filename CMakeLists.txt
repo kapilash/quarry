@@ -11,8 +11,11 @@ include(GenerateExportHeader)
 #ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
 link_directories(${Boost_LIBRARY_DIR})
 
+message ("Compiler id is ${CMAKE_CXX_COMPILER_ID}")
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-std=c++11 -stdlib=libc++)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  add_compile_options(-std=c++11)
 endif()
 
 add_subdirectory(gen)

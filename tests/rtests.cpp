@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE reader_tests test
 #include <boost/test/unit_test.hpp>
-
+#define QUARRY_EXPORT
 #include "QReader.h"
 #include <cstring>
 #include <iostream>
