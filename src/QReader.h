@@ -12,8 +12,6 @@ namespace Quarry {
 	QUARRY_EXPORT QReader(const char *fileName);
 	QUARRY_EXPORT QReader(const unsigned char *byteArray, size_t length, int l, int col);
 
-
-
 	inline bool hasMore()  {
 	  return (position < length);
 	}
@@ -31,7 +29,11 @@ namespace Quarry {
 	  }
 	  return c;
 	}
-            
+
+	inline const unsigned char* current() {
+	  return &(bytes[position]);
+	}
+	
 	inline int getCol() { return column;}
             
 	inline int getLine() { return line;}

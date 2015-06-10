@@ -63,16 +63,16 @@ struct quarry_Slab_
 
 struct quarry_Token_
 {
-    int tokenType;
-    int tokenLength;
-    char *text;
-    unsigned char info[8];
-    unsigned char extra[8];
+  int line;
+  int column;
+  int tokenType;
+  int tokenLength;
+  unsigned int info;
+  unsigned char *text;
 };
 
 typedef struct quarry_Slab_ quarry_Slab;
 typedef struct quarry_Slab_ *quarry_SlabPtr;
-
 
 typedef struct quarry_Token_ quarry_Token;
 typedef struct quarry_Token_ *quarry_TokenPtr;
