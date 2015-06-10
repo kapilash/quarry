@@ -27,6 +27,7 @@ namespace Quarry {
 	    position++;
 	  if (c == '\n') {
 	      ++line;
+	      column = 1;
 	  }
 	  return c;
 	}

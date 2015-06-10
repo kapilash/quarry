@@ -84,6 +84,10 @@ namespace Quarry {
 	QUARRY_EXPORT Token(int line, int column, enum TokenType t);
 	QUARRY_EXPORT Token(const Token &other);
 	QUARRY_EXPORT virtual quarry_TokenPtr toTokenPtr() const;
+	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
+	    out << "{(" << line << "," << column << ")" << tokenType << "}" << std::endl;
+	}
+
 	QUARRY_EXPORT virtual ~Token() {}
     };
 
@@ -99,6 +103,10 @@ namespace Quarry {
 	    p->tokenType = (int)genericType;
 	    fillTokenContent(p, value);
 	    return p;
+	}
+
+	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
+	    out << "{(" << line << "," << column << ") type:" << tokenType << "and " <<   "}" << std::endl;
 	}
     };
 
@@ -128,6 +136,11 @@ namespace Quarry {
 
 	virtual void fillExtraInfo(unsigned char *i, unsigned char *c){
 	    fillExtra(i,c, value);
+	}
+
+
+	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
+	    out << "{(" << line << "," << column << ")  " << value << " [" << text << "]}" << std::endl;
 	}
     };
 
