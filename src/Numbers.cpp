@@ -15,6 +15,22 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include <sstream>
 
 namespace Quarry {
+
+    template<typename numeric>
+    static numeric toNumber(unsigned char c) {
+	numeric v = 0;
+	if( c >= '0' && c <= '9') {
+	    v = (numeric)(c - '0');
+	}
+	else if (c >= 'A' && c <= 'F') {
+	    v = (numeric)(10 + (c - 'A'));
+	}
+	else{
+	    v = (numeric)(10 + (c - 'a'));
+	}
+	//std::cout << c << " = " << v << " ";
+	return v;
+    }
     
     template<typename T, typename numeric>
     static Token * tokenOrError(QReader &reader, std::string &text) {
@@ -26,7 +42,22 @@ namespace Quarry {
 	}
 	return new ErrorToken(reader.getLine(), reader.getCol(), "Invalid Numerical Constant");
     }
+
     
+    template<typename T, typename numeric>
+    static Token * tokenOrError(QReader &reader, std::string &text, int base, int pos) {
+	reader.addColumns(text.length());
+	std::istringstream iss(text);
+	numeric v = 0;
+	int len = text.length();
+	for (int p = pos; p < text.length(); p++){
+	    if((text[p] == 'u') || (text[p] == 'U') || (text[p] == 'l') || (text[p] == 'L'))
+		break;
+	    v = (v * base) + toNumber<numeric>(text[p]);
+	}
+	return new T(reader.getLine(), reader.getCol(), text,v);
+    }
+
     static Token *appendMantissa(std::string &text, QReader &reader)
     {
 	while( reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
@@ -56,7 +87,7 @@ namespace Quarry {
 	return tokenOrError<DblToken, double>(reader, text);
     }
     
-    static Token *tryOptionalU(std::string &text, QReader &reader) {
+    static Token *tryOptionalU(std::string &text, QReader &reader, int base = 10, int pos = 0) {
 	if(reader.hasMore() && ((reader.peekNext() == 'u') || (reader.peekNext() == 'U'))) {
 	    reader.next();
 	    text.push_back('U');
@@ -68,19 +99,19 @@ namespace Quarry {
 		if (reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
 		    text.push_back('L');
 		    reader.next();
-		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text);
+		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text, base, pos);
 		}
 		
-		return tokenOrError<ULongToken, unsigned long>(reader, text);
+		return tokenOrError<ULongToken, unsigned long>(reader, text, base, pos);
 	    }
 	    
-	    return tokenOrError<UIntToken, unsigned int>(reader, text);
+	    return tokenOrError<UIntToken, unsigned int>(reader, text, base, pos);
 	}
 	
 	return nullptr;
     }
 
-    static Token *tryOptionalLL(std::string &text, QReader &reader) {
+    static Token *tryOptionalLL(std::string &text, QReader &reader, int base = 10, int pos = 0) {
 	bool isUnsigned = false;
 	bool isLongLong = false;
 	bool isLong  = false;
@@ -104,17 +135,17 @@ namespace Quarry {
 	if (isLong) {
 	    if (isLongLong) {
 		if (isUnsigned)
-		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text);
+		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text, base, pos);
 		else
-		    return tokenOrError<LongLongToken, long long>(reader, text);
+		    return tokenOrError<LongLongToken, long long>(reader, text, base, pos);
 	    }
 	    if (isUnsigned)	    
-		return tokenOrError<ULongToken, unsigned long>(reader, text);
+		return tokenOrError<ULongToken, unsigned long>(reader, text, base, pos);
 	    
-	    return tokenOrError<LongToken, long>(reader, text);
+	    return tokenOrError<LongToken, long>(reader, text,base, pos);
 	}
 	
-	return tryOptionalU(text, reader);
+	return tryOptionalU(text, reader, base, pos);
     }
     
     Token* numberLexer(QReader &reader, QContext &context)
@@ -150,8 +181,12 @@ namespace Quarry {
 	    text.push_back(reader.next());
 	    return appendMantissa(text, reader);
 	}
+	int base = 10;
+	int pos  = 0;
 	if (reader.hasMore() && ((reader.peekNext() == 'x') || (reader.peekNext() == 'X'))) {
 	    text.push_back(reader.next());
+	    base = 16;
+	    pos = 2; 
 	    while(reader.hasMore() && 
 		  (
 		   ((reader.peekNext() >= '0') && (reader.peekNext() <= '9')) ||
@@ -162,21 +197,25 @@ namespace Quarry {
 	}
 	else if(reader.hasMore() && ((reader.peekNext() == 'b') || (reader.peekNext() == 'B'))) {
 	    text.push_back(reader.next());
+	    base = 2;
+	    pos = 2;
 	    while(reader.hasMore() && ((reader.peekNext() == '0') || (reader.peekNext() == '1'))) {
 		text.push_back(reader.next());
 	    }
 	}
 	else{
-	    while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
+	    base = 8;
+	    pos = 1;
+	    while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '7'))) {
 		text.push_back(reader.next());
 	    }
 	}
 
-	auto ullPtr = tryOptionalLL(text, reader);
+	auto ullPtr = tryOptionalLL(text, reader, base, pos);
 	if (ullPtr != nullptr) {
 	    return ullPtr;
 	}
 
-	return tokenOrError<IntToken,int>(reader, text);
+	return tokenOrError<IntToken,int>(reader, text, base, pos);
     }
 }

@@ -63,11 +63,8 @@ struct quarry_Slab_
 
 struct quarry_Token_
 {
-  int line;
-  int column;
-  int tokenType;
-  int tokenLength;
-  unsigned int info;
+  unsigned int tokenType;
+  unsigned short tokenLength;
   unsigned char *text;
 };
 

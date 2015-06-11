@@ -86,4 +86,6 @@ namespace Quarry {
 	    position++;
 	}
     }
+
+    int QReader::
 }

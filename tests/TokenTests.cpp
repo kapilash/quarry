@@ -65,9 +65,7 @@ BOOST_AUTO_TEST_CASE(many_numbers)
     else {
         std::cout << "failure at (" << slab->line << "," << slab->column << ") found " << slab->tokenType << std::endl ;
     }
-	slab->writeTo(std::cout);
-	// Quarry::printSlab(slab, count);
-	//	std::cout << count << ":{line = " << slab->line << "; column="<< slab->col << "; length=" << slab->slabLength << "; type=" << slab->slabType << "; text=" << slab->data <<"}" << std::endl ;
+	// slab->writeTo(std::cout);
 	count++;
 	delete spaces(qr, context);
 	delete slab;
