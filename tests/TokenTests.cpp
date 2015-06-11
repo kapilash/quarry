@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(many_numbers)
     else {
         std::cout << "failure at (" << slab->line << "," << slab->column << ") found " << slab->tokenType << std::endl ;
     }
-	// slab->writeTo(std::cout);
+	//slab->writeTo(std::cout);
 	count++;
 	delete spaces(qr, context);
 	delete slab;
@@ -91,6 +91,7 @@ BOOST_AUTO_TEST_CASE(many_chars)
 
 	count++;
 	delete spaces(qr, context);
+	//	slab->writeTo(std::cout);
 	delete slab;
     }
     std::cout << "validated " << count  << " characters " << std::endl;

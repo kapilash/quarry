@@ -42,6 +42,7 @@ namespace Quarry {
         Token *genericBlockComment(QReader &reader, QContext &context) {
             int line = reader.getLine();
             int col = reader.getCol()-1;
+	    int initCol = reader.getCol();
             std::string text;
             int count = 1;
             reader.next();
@@ -77,11 +78,14 @@ namespace Quarry {
                 }
                 col++;
             }
-            return new CommentToken(line, col, text);
+	    reader.addColumns(col);
+            return new CommentToken(line, initCol, text);
         }
 
     Token* csComments(QReader &reader, QContext &context) {
-        auto col = reader.next();
+	auto line = reader.getLine();
+	reader.next();
+        auto col = reader.getCol();
         if (reader.hasMore() && reader.peekNext() == '/') {
             std::string text("//");
             while (reader.hasMore() && reader.peekNext() != '\n') {
@@ -89,7 +93,7 @@ namespace Quarry {
             }
             if (reader.hasMore())
                 reader.next();
-            return new CommentToken(reader.getLine(), col, text);
+            return new CommentToken(line, col, text);
         }
         else if (reader.hasMore() && reader.peekNext() == '*') {
             return genericBlockComment<>(reader, context);
@@ -100,88 +104,6 @@ namespace Quarry {
             return new Operator(reader.getLine(), col, context.operatorIndex(t));
         }
     }
-
-  /*    class SchemeHashLexer : public BaseLexer {
-    private:
-	const std::map<std::string, unsigned int> nameValueMap = {
-	    {std::string("alarm"),   7},
-	    {std::string("backspace"),8},
-	    {std::string("delete"), 127},
-	    {std::string("escape"),  33},
-	    {std::string("newline"), 10},
-	    {std::string("null"),     0},
-	    {std::string("return"),   13},
-	    {std::string("space"),    32},
-	    {std::string("tab"),       9}
-	};
-	
-	quarry_SlabPtr scanBool(QReader &reader, QContext &context, bool b) const {
-	    reader.next();
-	    quarry_SlabPtr ret = new quarry_Slab();
-	    ret->line = reader.getLine();
-	    ret->col = reader.getCol();
-	    ret->slabLength = 0;
-	    ret->data = nullptr;
-	    ret->slabType = quarry_Bool;
-	    ret->slabMD = b ? 1 : 0;
-	    return nullptr;
-	}
-	quarry_SlabPtr scanChar(QReader &reader, QContext &context) const {
-	    reader.next();
-	    quarry_SlabPtr ret = new quarry_Slab();
-	    ret->line = reader.getLine();
-	    ret->col = reader.getCol() - 2;
-	    std::vector<unsigned char> tokenText;
-	    ret->slabType = quarry_Char;
-	    unsigned char c = reader.peekNext();
-
-	    if (c == 'x') {
-		tokenText.push_back(reader.next());
-		c = reader.peekNext();
-		while ( ('0' <= c) && (  '9' >= c)) {
-		    unsigned char digit = reader.next();
-		    tokenText.push_back(digit);
-		}
-	    }
-	    else if (c < 128) {
-	    }
-	    while(!IS_SCHEME_DELIMITER(reader.peekNext())) {
-	      tokenText.push_back(reader.next());
-	    }
-
-	    fillToken(ret, tokenText);
-	    ret->slabMD = 0;
-	    return nullptr;
-	}
-	quarry_SlabPtr scanComment(QReader &reader, QContext &context) const {
-	    DoubleCharComment comm('#','|','#');
-	    
-	    return comm.scan(reader,context);
-	}
-    public:
-	quarry_SlabPtr scan(QReader &reader, QContext &context) const {
-	    reader.next();
-	    if (reader.hasMore()){
-		if(';' == reader.peekNext()) {
-		    SingleCharComment comment;
-		    return comment.scan(reader, context);
-		}
-		if('f' == reader.peekNext() || 'F' == reader.peekNext()) {
-		    return scanBool(reader, context, false);
-		}
-		if('t' == reader.peekNext() || 'T' == reader.peekNext()) {
-		    return scanBool(reader, context, true);
-		}
-		if('|' == reader.peekNext()) {
-		    return scanComment(reader, context);
-		}
-		if('\\' == reader.peekNext()) {
-		    return scanChar(reader, context);
-		}
-	    }
-	    return nullptr;
-	}
-	}; */
     
     template <char delimiter, char escape, enum TokenType tokenType>
     Token* delimitedStrToken(QReader &reader, QContext &context){
@@ -208,12 +130,22 @@ namespace Quarry {
     Token*  spaceLexer(QReader &reader, QContext &context) {
 	auto line = reader.getLine();
 	auto col = reader.getCol();
-	reader.next();
+	int initCol = col;
+	auto c = reader.next();
+	if (c == '\n')
+	    col = 0;
+	else
+	    col = 1;
 	
 	while(reader.hasMore() && reader.peekNext() < 33) {
-	    reader.next();
+	   c = reader.next();
+	   if (c == '\n')
+	       col = 0;
+	   else
+	       col++;
 	}
-	return new Token(line, col, WHITESPACE);
+	reader.addColumns(col);
+	return new Token(line, initCol, WHITESPACE);
     }
 
     

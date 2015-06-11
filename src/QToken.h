@@ -15,7 +15,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <string>
 #include <boost/lexical_cast.hpp>
 #include "quarry_export.h"
-#include "quarry.h"
 #include <iostream>
 
 namespace Quarry {
@@ -58,23 +57,6 @@ namespace Quarry {
 	QUnsignedLongLong,
     };
 
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const std::string &str);
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const int i);
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const unsigned int i);
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const std::u32string &str);
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const char32_t wideChar);
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const bool b);
-
-    void fillExtra(unsigned char *info, unsigned char *extra, int i);
-    void fillExtra(unsigned char *info, unsigned char *extra, unsigned int i);
-    void fillExtra(unsigned char *info, unsigned char *extra, long l);
-    void fillExtra(unsigned char *info, unsigned char *extra, unsigned long l);
-    void fillExtra(unsigned char *info, unsigned char *extra, long long l);
-    void fillExtra(unsigned char *info, unsigned char *extra, unsigned long long i);
-    void fillExtra(unsigned char *info, unsigned char *extra, float f);
-    void fillExtra(unsigned char *info, unsigned char *extra, double d);
-    void fillExtra(unsigned char *info, unsigned char *extra, long double d);
-    
     class Token{
     public:
 	const int line;
@@ -83,7 +65,6 @@ namespace Quarry {
 
 	QUARRY_EXPORT Token(int line, int column, enum TokenType t);
 	QUARRY_EXPORT Token(const Token &other);
-	QUARRY_EXPORT virtual quarry_TokenPtr toTokenPtr() const;
 	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
 	    out << "{(" << line << "," << column << ")" << tokenType << "}" << std::endl;
 	}
@@ -98,15 +79,9 @@ namespace Quarry {
          QUARRY_EXPORT GenericToken(int line, int column,const T &v)
                : Token(line, column, genericType), value(v) {
 	}
-	QUARRY_EXPORT virtual quarry_TokenPtr toTokenPtr() const {
-	    quarry_TokenPtr p = new quarry_Token();
-	    p->tokenType = (int)genericType;
-	    fillTokenContent(p, value);
-	    return p;
-	}
 
 	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
-	    out << "{(" << line << "," << column << ") type:" << tokenType << "and " <<   "}" << std::endl;
+	    out << "{(" << line << "," << column << ") type:" << tokenType <<   "}" << std::endl;
 	}
     };
 
@@ -115,15 +90,11 @@ namespace Quarry {
 	const QNumberType numberType;
 	const std::string text;
 	QUARRY_EXPORT NumericalToken(int line, int column, QNumberType nt, const std::string &s)
-	    :Token(line, column, NUMBER),
+	    :Token(line, column - s.length(), NUMBER),
 	    numberType(nt),
 	    text(s)
 	 {
 	 }
-	QUARRY_EXPORT virtual quarry_TokenPtr toTokenPtr() const ;
-	virtual void fillExtraInfo(unsigned char *i, unsigned char *e){
-	    
-	}
     };
     
     template <typename T, QNumberType nt>
@@ -133,10 +104,6 @@ namespace Quarry {
 	QUARRY_EXPORT NumberToken(int line, int column, const std::string &txt, const T v)
 	    : NumericalToken(line, column, nt, txt),
 	    value(v) {}
-
-	virtual void fillExtraInfo(unsigned char *i, unsigned char *c){
-	    fillExtra(i,c, value);
-	}
 
 
 	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {

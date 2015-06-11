@@ -42,7 +42,7 @@ namespace Quarry {
 
 	inline void addColumns(int c) { column += c; }
 
-	QUARRY_EXPORT int matchWhile(bool (*predicate)(unsigned char));
+	QUARRY_EXPORT void appendWhile(bool (*predicate)(unsigned char), std::string&);
 	QUARRY_EXPORT int till(bool (*predicate)(unsigned char));
 	QUARRY_EXPORT void move(int count);
 

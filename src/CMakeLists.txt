@@ -8,9 +8,7 @@ set (SOURCES
     QContext.cpp
     QInternal.h
     QReader.h
-    quarry.h
     QuarryMaps.cpp
-    QMisc.cpp
     Characters.cpp
     Numbers.cpp
     QToken.h

@@ -18,7 +18,7 @@ namespace Quarry{
 	    collectJavaKeywords(keywords);
 	    collectJavaOperators(operators);
 	}
-	else if (p == R5RS_Scheme) {
+	else {
 	}
     }
 

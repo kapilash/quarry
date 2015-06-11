@@ -5,14 +5,12 @@
 #include <set>
 #include <vector>
 #include "QReader.h"
-#include "quarry.h"
 #include "QToken.h"
 
 namespace Quarry {
     enum PL {
 	C = 0,
-	JAVA,
-	R5RS_Scheme
+	JAVA
     };
 
     class QContext ;

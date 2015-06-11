@@ -16,57 +16,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 namespace Quarry {
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const std::string &str)
-    {
-    }
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const int i)
-    {
-    }
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const unsigned int i)
-    {
-    }
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const std::u32string &str)
-    {
-    }
- #ifndef _MSC_VER
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const char32_t wideChar)
-    {
-    }
-  #endif
-    void fillTokenContent(quarry_TokenPtr tokenPtr, const bool b)
-    {
-    }
-
-    Token:: Token(int line, int column, enum TokenType t): line(line), column(column), tokenType(t)
-    {
-
-    }
     Token:: Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
     {
     }
-
-    quarry_TokenPtr Token:: toTokenPtr() const
+    Token:: Token(int l, int c, enum TokenType t)  : line(l), column(c), tokenType(t)
     {
-	quarry_TokenPtr tokenPtr = new quarry_Token();
-
-	return tokenPtr;
     }
-
-    
-    quarry_TokenPtr NumericalToken::toTokenPtr() const
-    {
-	quarry_TokenPtr tokenPtr = new quarry_Token();
-
-	return tokenPtr;
-    }
-
-    void fillExtra(unsigned char *info, unsigned char *extra, int i) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, unsigned int i) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, long l) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, unsigned long l) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, long long l) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, unsigned long long i) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, float f) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, double d) { }
-    void fillExtra(unsigned char *info, unsigned char *extra, long double d) { }
 }

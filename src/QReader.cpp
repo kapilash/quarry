@@ -61,13 +61,12 @@ namespace Quarry {
       position = 0;
     }
 
-    int QReader::matchWhile(bool (*predicate)(unsigned char))
+    void QReader::appendWhile(bool (*predicate)(unsigned char), std::string& text)
     {
-	size_t i = position;
-	while((i < length) && predicate(bytes[i])) {
-	    ++i;
+	while(hasMore() && predicate(bytes[position])) {
+	    text.push_back(bytes[position]);
+	    next();
 	}
-	return i;
     }
 
     int QReader::till(bool (*predicate)(unsigned char))

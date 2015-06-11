@@ -58,21 +58,21 @@ namespace Quarry {
 	return new T(reader.getLine(), reader.getCol(), text,v);
     }
 
+    static bool isDigit(unsigned char c) {
+	return (c >= '0' && c <= '9');
+    }
+    
     static Token *appendMantissa(std::string &text, QReader &reader)
     {
-	while( reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
-	    text.push_back(reader.next());
-	}
-
+	reader.appendWhile(isDigit, text);
 	if( reader.hasMore() && ((reader.peekNext() == 'E') || (reader.peekNext() == 'e'))) {
 	    reader.next();
 	    text.push_back('E');
 	    if(reader.hasMore() &&( ( reader.peekNext() == '+') || (reader.peekNext() == '-')) ) {
 		text.push_back(reader.next());
 	    }
-	    while( reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
-		text.push_back(reader.next());
-	    }
+
+	    reader.appendWhile(isDigit, text);
 	}
 	
 	if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'F'))) {
@@ -153,13 +153,13 @@ namespace Quarry {
 	auto c = reader.next();
 	std::string text;
 	text.push_back(c);
-    if (c == '-' && (!reader.hasMore() || (reader.peekNext() < '0') || (reader.peekNext() > '9'))) {
+	if (c == '-' && (!reader.hasMore() || (reader.peekNext() < '0') || (reader.peekNext() > '9'))) {
             return new Operator(reader.getLine(), reader.getCol(), context.operatorIndex(text));
-    }
+	}
+	
 	if (c != '0') {
-	    while(reader.hasMore() && ((reader.peekNext() >= '0') && (reader.peekNext() <= '9'))) {
-		text.push_back(reader.next());
-	    }
+	    reader.appendWhile(isDigit, text);
+
 	    auto ullPtr = tryOptionalLL(text,reader);
 	    if (ullPtr != nullptr) {
 		return ullPtr;
