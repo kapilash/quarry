@@ -1,129 +1,128 @@
 module Text.QLexer where
 
-
-import qualified Data.Text as Txt
-import qualified Data.Attoparsec.ByteString as P
-import qualified Data.ByteString as BS    
-import Control.Monad.State
 import Text.QToken
-import Data.Bits
-import Data.Word
-import Control.Applicative    
+import Control.Applicative
+import Data.Functor
+import Control.Monad
+import qualified Data.List as Lst
 
-newtype Position = Position (Int, Int)
-    deriving (Eq,Show)
-    
-nextLine (Position (x,_)) = Position (x+1,1)
+data LexInput = LexInput !String !Int !Int
+                deriving Show
 
-addCol w (Position (x, y)) = Position (x, y + w)
-
-incrColumnBy :: Int -> Parser ()                             
-incrColumnBy = modify . addCol
-
-incrLine ::  Parser ()                             
-incrLine = modify nextLine
-       
-type Parser  = StateT Position P.Parser
-
-space :: Parser ()     
-space = do
-      lift $ P.skip $ \w -> (w /= 10) && (w < 33)
-      incrColumnBy 1
+data Lexer a = Lexer { unLex :: LexInput -> ((Either String a), LexInput) }
 
 
-             
-newLine :: Parser ()
-newLine = do
-        lift $ P.word8 10
-        incrLine
+retLexer :: a -> Lexer a
+retLexer x = Lexer $ \input -> (Right x, input)
 
-asRecord :: QToken -> Parser QRecord
-asRecord t = do
-         Position (l,c) <- get
-         return $ QRecord t l c
+bindLexer :: Lexer a -> (a -> Lexer b) -> Lexer b
+bindLexer (Lexer aLexer) fxToLY = Lexer $ \input ->
+  case aLexer input of
+   (Left msg, i)  -> (Left msg, i)
+   (Right a, leftOver) -> case unLex (fxToLY a) $ leftOver of
+                            (Left msg, _)     -> (Left msg, input)
+                            r                 -> r
 
-parseUTF :: Parser Char
-parseUTF = do
-  (c, i) <- lift $ parseUTF'
-  incrColumnBy i
-  return $ toEnum c
+failMsg s = Lexer $ \input -> (Left s, input)
 
-         
+mapLexer :: (a -> b) -> Lexer a -> Lexer b
+mapLexer fAToB (Lexer aLex) = Lexer $ \input ->
+  case aLex input of
+  (Left msg, i)     -> (Left msg, i)
+  (Right aVal, leftOver) -> (Right $ fAToB aVal, leftOver)
 
-toHex = BS.foldl f 0 .  BS.map w8ToDigit
-     where
-       f i w = i * 16 +  (fromEnum w)
-       w8ToDigit w = if (w > 47) && (w < 58)
-                     then w - 47
-                     else if (w  > 64) && ( w < 71)
-                          then w - 55
-                          else w - 87
+instance Functor Lexer where
+  fmap = mapLexer
+
+seqLexers :: Lexer (a -> b) -> Lexer a -> Lexer b
+seqLexers (Lexer a2bF) (Lexer aF) = Lexer $ \input ->
+  case a2bF input of
+   (Left msg, i)            -> (Left msg, i)
+   (Right a2bVal, leftOver) -> case aF leftOver of
+                                (Right aVal, remaining) -> (Right $ a2bVal aVal, remaining)
+                                (Left msg, _)           -> (Left msg, input)
 
 
-                               
-parseEsc :: P.Parser (Int, Int)
-parseEsc = do
-      P.word8 92
-      escaped <|> utf
+choose :: Lexer a -> Lexer a -> Lexer a
+choose (Lexer a1F) (Lexer a2F) = Lexer $ \input ->
+  case a1F input of
+   (Right av, leftOver)  -> (Right av, leftOver)
+   (Left _, _)           -> a2F input
+
+instance Applicative   Lexer where
+  pure = retLexer
+  (<*>) = seqLexers
+
+instance Monad Lexer where
+  return = retLexer
+  (>>=) = bindLexer
+  fail  = failMsg
+
+instance Alternative Lexer where
+  empty = failMsg "no-parse"
+  (<|>) = choose
+
+instance MonadPlus Lexer where
+  mzero = failMsg "no-parse"
+  mplus = choose
+
+newLine = Lexer newLine'
   where
-    escaped = do
-             w <- P.satisfy (flip elem [34,39,48, 92,97,98,102,114,110,116,118])
-             return (fromEnum w, 2)
+    newLine' i@(LexInput ('\r':'\n':rest) l _) = (Right (), LexInput rest (l+1) 0)
+    newLine' i@(LexInput ('\n':rest) l _)      = (Right (), LexInput rest (l+1) 0)
+    newLine' i  = (Left "Expected EOL", i)
 
-    utf = do
-       P.satisfy (\w -> (w == 117 || w == 85 || w == 120))
-       (i,c) <- parseHexes
-       return (i, c+2)
+char :: Char -> Lexer Char
+char c = Lexer char'
+  where char' i@(LexInput (a:rest) ln col) = if a == c then  (Right a, LexInput rest ln (col + 1))
+                                             else (Left $ "Expected " ++ (show c) ++ " found " ++ (show a), i)
+        char' i                         = (Left $ "EOF while looking for " ++ show c, i)
 
-             
-parseChar :: P.Parser (QToken, Int, Int)
-parseChar = do
-  P.word8 39
-  (i,c) <- parseEsc <|> parseUTF'
-  P.word8 39
-  return $ (QCharLiteral $ toEnum i, 0, c + 2)
-
-parseCStr :: P.Parser (QToken, Int, Int)
-parseCStr = do
-  P.word8 34
-  lst <- P.manyTill (parseEsc <|> parseUTF') (P.word8 34)
-  return $ (QStrLiteral $ map (toEnum . fst) lst, 0, length lst)
-  
-parseHexes :: P.Parser (Int, Int)
-parseHexes = do
-  b <- P.takeWhile1 $ \w ->
-                          (or [( w > 47) && (w <58),
-                               (w > 64) && (w <71),
-                               (w > 96) && (w < 103) ])
-  return $ (toHex b,  BS.length b)
-                  
-parseUTF' :: P.Parser (Int, Int)                
-parseUTF' = do { i <- parseUtf1; return (i,1) }
-           <|> do { i<- parseUtf2; return (i,2) }
-           <|> do { i <- parseUtf3; return (i,3) }
-           <|> do { i <- parseUtf4; return (i,4) }
-         where  
-           parseUtf1 = do
-             b <-  P.satisfy (< 128)
-             return $ fromEnum b
-
-           parseUtf2 = do
-                v <- asInt (\w -> (w > 191) && (w < 223))
-                t <- asInt   (< 192)
-                return $ (shift v 6) + t - 0x3080
- 
-           parseUtf3 = do
-                v <- asInt (\w -> (w > 223) && (w < 239))
-                t1 <- asInt   (< 192)
-                t2 <- asInt  (< 192)
-                return $ (shift v 12) + (shift t1 6) + t2  - 0xE2080
+peek :: Lexer Char
+peek  = Lexer peek'
+  where peek' i@(LexInput (a:rest) ln col) = (Right a, i)
+        peek' i                            = (Left "EOF", i)
         
-           parseUtf4 = do
-                v <- asInt (\w -> (w > 191) && (w < 223))
-                t1 <- asInt   (< 192)
-                t2 <- asInt  (< 192)
-                t3 <- asInt (< 192)
-                return $ (shift v 18) + (shift t1 12) + (shift t2 6) + t3  - 0x3C82080
-                
-           asInt :: (Word8 -> Bool) -> P.Parser Int
-           asInt = fmap fromEnum . P.satisfy
+anyChar ::  Lexer Char
+anyChar = do
+   c <- peek
+   if c == '\r' || (c == '\n')
+     then (newLine >> return '\n')
+     else char c
+
+keyword :: String -> Lexer String
+keyword str = Lexer kw'
+  where kw' i@(LexInput text l c) = case Lst.stripPrefix str text of
+                                     Just rst     -> (Right str, LexInput rst l (c + (length str)))
+                                     Nothing      -> (Left $ "Expected " ++ str, i)
+
+while :: (Char -> Bool) -> Lexer String
+while pred = Lexer $ \input -> wh' input []
+  where wh' (LexInput [] l c) sofar = (Right $ Lst.reverse sofar, LexInput [] l c)
+        wh' i@(LexInput (a:rest) l c) sofar = if pred a
+                                            then if a == '\n' then wh' (LexInput rest (l+1) 0) (a:sofar)
+                                                 else wh' (LexInput rest l (c+1)) (a:sofar)
+                                            else (Right $ Lst.reverse sofar, i)
+
+while1 :: (Char -> Bool) -> Lexer String
+while1 pred = do
+  s <- while pred
+  case s of
+   []   -> fail "unsatisfied condition"
+   _    -> return s
+
+till :: Lexer a -> Lexer String
+till p = till'  []
+   where till' sofar = (pwrap sofar) <|> (readOne sofar)
+         pwrap sofar = do {p; return $ (Lst.reverse sofar)}
+         readOne l = do 
+           ac <- anyChar
+           till' (ac:l)
+
+skipTill :: Lexer a -> Lexer ()
+skipTill p = ( p >> return ()) <|> (anyChar >> (skipTill p))
+
+csComments = csLineComment <|> csBlockComment
+       where csLineComment = do {keyword "//"; skipTill newLine}
+             csBlockComment = do {keyword "/*"; skipTill (keyword "*/")}
+

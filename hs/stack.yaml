@@ -1,0 +1,6 @@
+flags:
+  hs-quarry: {}
+packages:
+- '.'
+extra-deps: []
+resolver: nightly-2015-06-09

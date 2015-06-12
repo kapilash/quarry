@@ -134,6 +134,8 @@ namespace Quarry {
 	auto c = reader.next();
 	if (c == '\n')
 	    col = 0;
+	else if (c == '\t')
+	       col = col + 4;
 	else
 	    col = 1;
 	
@@ -141,6 +143,8 @@ namespace Quarry {
 	   c = reader.next();
 	   if (c == '\n')
 	       col = 0;
+	   else if (c == '\t')
+	       col = col + 4;
 	   else
 	       col++;
 	}

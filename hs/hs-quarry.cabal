@@ -21,8 +21,6 @@ library
   other-modules:       Text.QLexer
   -- other-extensions:    
   build-depends:       base >=4.8,
-                       text >=1.2,
-                       attoparsec,
                        mtl,
                        bytestring
   hs-source-dirs:      src

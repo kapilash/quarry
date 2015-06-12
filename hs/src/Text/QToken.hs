@@ -2,18 +2,17 @@
 module Text.QToken where
 
 
-import qualified Data.Text as Txt
 
-data QToken = QError Txt.Text
+data QToken = QError String
               | QKeyword !Int
-              | QIdent !Txt.Text
+              | QIdent String
               | QStrLiteral String
               | QCharLiteral Char
               | QDouble Double
               | QLong Integer Bool
               | QInt Int Bool
               | QFloat Float
-              | QOperator Txt.Text
+              | QOperator !Int
               | QOpenBrace
               | QCloseBrace
               | QOpenBrackets
@@ -25,12 +24,12 @@ data QToken = QError Txt.Text
               | QQuestion
               | QColon
               | QSemiColon
-              | QComment Txt.Text
+              | QComment 
               | QBool
               | QWhitespace
               | QNewLine
               | QEOF
-              | QMetaId !Txt.Text
+              | QMetaId String
               | QReferId !Int
             deriving (Show)
 
