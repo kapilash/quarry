@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(many_numbers)
 	if (slab->tokenType == Quarry::NUMBER) {
 	    Quarry::NumericalToken *nt = dynamic_cast<Quarry::NumericalToken *>(slab);
 	    BOOST_CHECK(nt != nullptr);
-	    BOOST_CHECK(nt->text.length() > 0);
+	    BOOST_CHECK(nt->length > 0);
 
 	    switch(nt->numberType) {
 	    case Quarry::QLongDouble : 
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(many_numbers)
     else {
         std::cout << "failure at (" << slab->line << "," << slab->column << ") found " << slab->tokenType << std::endl ;
     }
-	//slab->writeTo(std::cout);
+	slab->writeTo(std::cout);
 	count++;
 	delete spaces(qr, context);
 	delete slab;
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(many_chars)
 
 	count++;
 	delete spaces(qr, context);
-	//	slab->writeTo(std::cout);
+	slab->writeTo(std::cout);
 	delete slab;
     }
     std::cout << "validated " << count  << " characters " << std::endl;
@@ -106,13 +106,14 @@ BOOST_AUTO_TEST_CASE(str_literals)
 
     int count = 0;
     while(qr.hasMore()) {
-      	Quarry::StringToken *slab = dynamic_cast<Quarry::StringToken *>(nextString(qr, context));
+      	auto slab = dynamic_cast<Quarry::StringToken *>(nextString(qr, context));
 	BOOST_CHECK(slab != nullptr);
 	BOOST_CHECK(slab->tokenType == Quarry::STRING);
 	BOOST_CHECK(slab->value.length() >= 0);
 
 	count++;
 	delete spaces(qr, context);
+	slab->writeTo(std::cout);
 	delete slab;
     }
     std::cout << "validated " << count  << " string literals " << std::endl;

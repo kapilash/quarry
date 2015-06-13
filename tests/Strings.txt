@@ -2,4 +2,4 @@
 
 "\'L" "'\"" "\nA" "A\n"
 
-"\U000ABC" "\U000ABCDE\u00AF\xAB0\xABC" "ж" "Ѽ" "˵źƦǥ" "\u00AF"
+"\U000A00BC" "\U000ABCDE\u00AF\xAB0\xABC" "ж" "Ѽ" "˵źƦǥ" "\u00AF"

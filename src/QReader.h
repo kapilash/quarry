@@ -33,6 +33,10 @@ namespace Quarry {
 	inline const unsigned char* current() {
 	  return &(bytes[position]);
 	}
+
+	inline std::size_t currPosition() const {
+	    return position;
+	}
 	
 	inline int getCol() { return column;}
             

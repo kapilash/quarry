@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE (simpleBlockComment)
 
     Quarry::Lexer comments = Quarry::csComments;
     Quarry::QContext context(Quarry::C);
-    auto slab = dynamic_cast<Quarry::CommentToken *>(comments(qr, context));
+    auto slab = comments(qr, context);
     BOOST_CHECK(slab != nullptr);
     BOOST_CHECK(slab->tokenType == Quarry::COMMENT);
     std::string leftOver;
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
 
     Quarry::Lexer comments = Quarry::csComments;
     Quarry::QContext context(Quarry::C);
-    auto slab = dynamic_cast<Quarry::CommentToken*>(comments(qr, context));
+    auto slab = comments(qr, context);
     BOOST_CHECK(slab != nullptr);
     //BOOST_CHECK(slab->value.length() == 4607);
     BOOST_CHECK(slab->tokenType == Quarry::COMMENT);
@@ -71,6 +71,7 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
       leftOver.append(1, qr.next());
     }
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
+    slab->writeTo(std::cout);
     delete slab;
 }
 
@@ -84,10 +85,10 @@ BOOST_AUTO_TEST_CASE(java_comments)
     int commentCount = 0;
 
     while(qr.hasMore()) {
-	auto slab = dynamic_cast<Quarry::CommentToken *>(comments(qr, context));
+	auto slab = comments(qr, context);
 	BOOST_CHECK(slab != nullptr);
 	BOOST_CHECK(slab->tokenType == Quarry::COMMENT);
-	//slab->writeTo(std::cout);
+	slab->writeTo(std::cout);
 	commentCount++;
 	delete spaces(qr, context);
 	delete slab;

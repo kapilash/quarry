@@ -148,6 +148,8 @@ namespace Quarry {
     Token* charLexer(QReader &reader, QContext &context) {
 	auto col = reader.getCol();
 	auto line = reader.getLine();
+	const unsigned char *initPtr = reader.current();
+	std::size_t initPos = reader.currPosition();
 	auto c = reader.next();
 
 	if (!reader.hasMore()) {
@@ -171,7 +173,7 @@ namespace Quarry {
 	    }
 	    reader.next();
 	    reader.setColumn(col + 3);
-	    return new CharToken(line, col, code);
+	    return new CharToken(line, col, code, (reader.currPosition() - initPos), initPtr);
 	}
 	//c == '\'
 	if (!reader.hasMore()) {
@@ -244,7 +246,8 @@ namespace Quarry {
 	reader.setColumn(newCol);
 	if(reader.hasMore() && reader.peekNext() == '\'') {
 	    reader.next();
-	    return new CharToken(line, col, code);
+	    
+	    return new CharToken(line, col, code, (reader.currPosition() - initPos), initPtr);
 	}
 	return new ErrorToken(line, col, "invalid character ");
     }
@@ -253,10 +256,14 @@ namespace Quarry {
   Token* cstringLexer(QReader &reader, QContext &context) {
 	auto col = reader.getCol();
 	auto line = reader.getLine();
+
+	const unsigned char* start = reader.current();
+	std::size_t initPos = reader.currPosition();
 	auto c = reader.next();
 
 	int additional = 0;
 	char32_t code = 0;
+
 	std::u32string text;
 	while (reader.hasMore() && reader.peekNext() != '"') {
 	  	c = reader.next();
@@ -347,7 +354,8 @@ namespace Quarry {
 	}
 	reader.next();
 	reader.setColumn(col + text.length() + additional);
-	return new StringToken(line, col, std::move(text));
+	std::size_t len = reader.currPosition() - initPos;
+	return new StringToken(line, col,text ,len, start);
     }
 
     
@@ -356,6 +364,9 @@ namespace Quarry {
             int col = 1;
             std::string text;
             int count = 1;
+	    std::size_t initPos = reader.currPosition();
+	    const unsigned char *begin = reader.current();
+	    
             text.push_back(reader.next());
 	    auto c = reader.peekNext();
             while (reader.hasMore() && isValidIdentChar(c)) {
@@ -371,9 +382,9 @@ namespace Quarry {
 	    reader.addColumns(col);
 	    auto index = context.keywordIndex(text);
 	    if (index < 0)
-	    return new IdentifierToken(line, reader.getCol(), text);
+		return new IdentifierToken(line, reader.getCol(), text, (reader.currPosition() - initPos), begin);
 
-	    return new Keyword(line,col, index);
+	    return new Keyword(line,col, index, (reader.currPosition() - initPos), begin);
     }
 
     static bool isCIdentChar(unsigned char b) {
@@ -403,6 +414,8 @@ namespace Quarry {
             int col = 1;
             std::string text;
             int count = 1;
+	    const unsigned char *begin = reader.current();
+	    std::size_t initPos = reader.currPosition();
             text.push_back(reader.next());
 	    auto c = reader.peekNext();
             while (reader.hasMore() && isValidOper(c)) {
@@ -417,10 +430,11 @@ namespace Quarry {
 	    }
 	    reader.addColumns(col);
 	    auto index = context.keywordIndex(text);
+	    
 	    if (index < 0)
-	    return new OperatorId(line, reader.getCol(), text);
+		return new OperatorId(line, reader.getCol(), text, (reader.currPosition() - initPos), begin);
 
-	    return new Operator(line,col, index);
+	    return new Operator(line,col, index, (reader.currPosition() - initPos), begin);
 	}
     };
 

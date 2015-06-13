@@ -16,10 +16,27 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 namespace Quarry {
-    Token:: Token(const Token &other)  : line(other.line), column(other.column), tokenType(other.tokenType)
+    /*Token:: Token(int l, int c, enum TokenType t)  : line(l), column(c), tokenType(t), length(0), textPtr(nullptr)
+    {
+    }*/
+
+    Token:: Token(int l, int c, enum TokenType t, std::size_t len, const unsigned char *p )  : line(l), column(c), tokenType(t), length(len), textPtr(p)
     {
     }
-    Token:: Token(int l, int c, enum TokenType t)  : line(l), column(c), tokenType(t)
-    {
+
+    void Token::writeTo(std::ostream &out) {
+	
+	out << "{(" << line << "," << column << ")" << tokenTypeStrs[tokenType] << ": ("  <<  length << ")" << inputPtrToString(textPtr, length) << std::endl;
+    }
+
+    std::string inputPtrToString(const unsigned char *ptr, std::size_t len) {
+	if (ptr == nullptr) {
+	    return "<null>";
+	}
+	std::string text;
+	for(int i = 0; i < len; i++) {
+	    text.push_back(ptr[i]);
+	}
+	return text;
     }
 }

@@ -33,19 +33,19 @@ namespace Quarry {
     }
     
     template<typename T, typename numeric>
-    static Token * tokenOrError(QReader &reader, std::string &text) {
+    static Token * tokenOrError(QReader &reader, std::string &text, const unsigned char *begin, std::size_t initPos) {
 	reader.addColumns(text.length());
 	std::istringstream iss(text);
 	numeric v;
 	if (iss >> v){
-	    return new T(reader.getLine(), reader.getCol(), text,v);
+	    return new T(reader.getLine(), reader.getCol(), v, (reader.currPosition() - initPos), begin);
 	}
 	return new ErrorToken(reader.getLine(), reader.getCol(), "Invalid Numerical Constant");
     }
 
     
     template<typename T, typename numeric>
-    static Token * tokenOrError(QReader &reader, std::string &text, int base, int pos) {
+    static Token * tokenOrError(QReader &reader, std::string &text, int base, int pos, const unsigned char *begin, std::size_t initPos) {
 	reader.addColumns(text.length());
 	std::istringstream iss(text);
 	numeric v = 0;
@@ -55,14 +55,14 @@ namespace Quarry {
 		break;
 	    v = (v * base) + toNumber<numeric>(text[p]);
 	}
-	return new T(reader.getLine(), reader.getCol(), text,v);
+	return new T(reader.getLine(), reader.getCol(), v, (reader.currPosition() - initPos), begin);
     }
 
     static bool isDigit(unsigned char c) {
 	return (c >= '0' && c <= '9');
     }
     
-    static Token *appendMantissa(std::string &text, QReader &reader)
+    static Token *appendMantissa(std::string &text, QReader &reader, const unsigned char *begin, std::size_t initPos)
     {
 	reader.appendWhile(isDigit, text);
 	if( reader.hasMore() && ((reader.peekNext() == 'E') || (reader.peekNext() == 'e'))) {
@@ -77,17 +77,17 @@ namespace Quarry {
 	
 	if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'F'))) {
 	    text.push_back(reader.next());
-	    return tokenOrError<FlToken, float>(reader, text);
+	    return tokenOrError<FlToken, float>(reader, text, begin, initPos);
 	}
 	if(reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
 	    text.push_back(reader.next());
-	    return tokenOrError<LDblToken, long double>(reader, text);
+	    return tokenOrError<LDblToken, long double>(reader, text, begin, initPos);
 	}
 	
-	return tokenOrError<DblToken, double>(reader, text);
+	return tokenOrError<DblToken, double>(reader, text, begin, initPos);
     }
     
-    static Token *tryOptionalU(std::string &text, QReader &reader, int base = 10, int pos = 0) {
+    static Token *tryOptionalU(std::string &text, QReader &reader,const unsigned char *begin, std::size_t initPos, int base = 10, int pos = 0) {
 	if(reader.hasMore() && ((reader.peekNext() == 'u') || (reader.peekNext() == 'U'))) {
 	    reader.next();
 	    text.push_back('U');
@@ -99,19 +99,19 @@ namespace Quarry {
 		if (reader.hasMore() && ((reader.peekNext() == 'l') || (reader.peekNext() == 'L'))) {
 		    text.push_back('L');
 		    reader.next();
-		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text, base, pos);
+		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text, base, pos,begin, initPos);
 		}
 		
-		return tokenOrError<ULongToken, unsigned long>(reader, text, base, pos);
+		return tokenOrError<ULongToken, unsigned long>(reader, text, base, pos, begin,initPos);
 	    }
 	    
-	    return tokenOrError<UIntToken, unsigned int>(reader, text, base, pos);
+	    return tokenOrError<UIntToken, unsigned int>(reader, text, base, pos, begin, initPos);
 	}
 	
 	return nullptr;
     }
 
-    static Token *tryOptionalLL(std::string &text, QReader &reader, int base = 10, int pos = 0) {
+    static Token *tryOptionalLL(std::string &text, QReader &reader, const unsigned char *begin, std::size_t initPos, int base = 10, int pos = 0) {
 	bool isUnsigned = false;
 	bool isLongLong = false;
 	bool isLong  = false;
@@ -135,51 +135,54 @@ namespace Quarry {
 	if (isLong) {
 	    if (isLongLong) {
 		if (isUnsigned)
-		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text, base, pos);
+		    return tokenOrError<ULongLongToken, unsigned long long>(reader, text, base, pos, begin, initPos);
 		else
-		    return tokenOrError<LongLongToken, long long>(reader, text, base, pos);
+		    return tokenOrError<LongLongToken, long long>(reader, text, base, pos, begin, initPos);
 	    }
 	    if (isUnsigned)	    
-		return tokenOrError<ULongToken, unsigned long>(reader, text, base, pos);
+		return tokenOrError<ULongToken, unsigned long>(reader, text, base, pos, begin, initPos);
 	    
-	    return tokenOrError<LongToken, long>(reader, text,base, pos);
+	    return tokenOrError<LongToken, long>(reader, text,base, pos, begin, initPos);
 	}
 	
-	return tryOptionalU(text, reader, base, pos);
+	return tryOptionalU(text, reader, begin, initPos, base, pos);
     }
     
     Token* numberLexer(QReader &reader, QContext &context)
     {
+	const unsigned char *begin = reader.current();
+	std::size_t initPos = reader.currPosition();
 	auto c = reader.next();
+
 	std::string text;
 	text.push_back(c);
 	if (c == '-' && (!reader.hasMore() || (reader.peekNext() < '0') || (reader.peekNext() > '9'))) {
-            return new Operator(reader.getLine(), reader.getCol(), context.operatorIndex(text));
+            return new Operator(reader.getLine(), reader.getCol(), context.operatorIndex(text), 1, begin);
 	}
 	
 	if (c != '0') {
 	    reader.appendWhile(isDigit, text);
 
-	    auto ullPtr = tryOptionalLL(text,reader);
+	    auto ullPtr = tryOptionalLL(text,reader, begin, initPos);
 	    if (ullPtr != nullptr) {
 		return ullPtr;
 	    }
 	    else if(reader.hasMore() && ((reader.peekNext() == 'f') || (reader.peekNext() == 'f'))) {
 		reader.next();
-		return tokenOrError<FlToken,float>(reader, text);
+		return tokenOrError<FlToken,float>(reader, text, begin, initPos);
 	    }else if(reader.hasMore() && ((reader.peekNext() == 'd') || (reader.peekNext() == 'D'))) {
 		reader.next();
-		return tokenOrError<DblToken, double>(reader, text); 
+		return tokenOrError<DblToken, double>(reader, text, begin, initPos); 
 	    }else if(reader.hasMore() && (reader.peekNext() == '.')) {
 		text.push_back(reader.next());
-		return appendMantissa(text, reader);
+		return appendMantissa(text, reader, begin, initPos);
 	    }
 	    
-	    return tokenOrError<IntToken,int>(reader, text);
+	    return tokenOrError<IntToken,int>(reader, text, begin, initPos);
 	}
 	if (reader.hasMore() && (reader.peekNext() == '.')){
 	    text.push_back(reader.next());
-	    return appendMantissa(text, reader);
+	    return appendMantissa(text, reader, begin, initPos);
 	}
 	int base = 10;
 	int pos  = 0;
@@ -211,11 +214,11 @@ namespace Quarry {
 	    }
 	}
 
-	auto ullPtr = tryOptionalLL(text, reader, base, pos);
+	auto ullPtr = tryOptionalLL(text, reader, begin, initPos,base, pos);
 	if (ullPtr != nullptr) {
 	    return ullPtr;
 	}
 
-	return tokenOrError<IntToken,int>(reader, text, base, pos);
+	return tokenOrError<IntToken,int>(reader, text, base, pos, begin, initPos);
     }
 }

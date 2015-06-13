@@ -19,32 +19,59 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 namespace Quarry {
     enum TokenType {
-	ERROR,
-	KEYWORD,
-	IDENT,
-	STRING,
-	CHAR,
-	NUMBER,
-	OPERATOR,
-	OPEN_BRACE,
-	CLOSE_BRACE,
-	OPEN_BRACKET,
-	CLOSE_BRACKET,
-	SQUARE_OPEN,
-	SQUARE_CLOSE,
-	DOT,
-	COLON,
-	SEMI_COLON,
-	QUESTION_MARK,
-	COMMA,
-	COMMENT,
-	WHITESPACE,
-	NEWLINE,
-	META_ID,
-	BOOL,
-	QEOF
+        ERROR,
+        KEYWORD,
+        IDENT,
+        STRING,
+        CHAR,
+        NUMBER,
+        OPERATOR,
+        OPEN_BRACE,
+        CLOSE_BRACE,
+        OPEN_BRACKET,
+        CLOSE_BRACKET,
+        SQUARE_OPEN,
+        SQUARE_CLOSE,
+        DOT,
+        COLON,
+        SEMI_COLON,
+        QUESTION_MARK,
+        COMMA,
+        COMMENT,
+        WHITESPACE,
+        NEWLINE,
+        META_ID,
+        BOOL,
+        QEOF
     };
 
+    static std::string tokenTypeStrs[] = {
+    "ERROR",
+    "KEYWORD",
+    "IDENT",
+    "STRING",
+    "CHAR",
+    "NUMBER",
+    "OPERATOR",
+    "OPEN_BRACE",
+    "CLOSE_BRACE",
+    "OPEN_BRACKET",
+    "CLOSE_BRACKET",
+    "SQUARE_OPEN",
+    "SQUARE_CLOSE",
+    "DOT",
+    "COLON",
+    "SEMI_COLON",
+    "QUESTION_MARK",
+    "COMMA",
+    "COMMENT",
+    "WHITESPACE",
+    "NEWLINE",
+    "META_ID",
+    "BOOL",
+    "QEOF"
+    };
+    
     enum QNumberType {
 	QLongDouble,
 	QDouble,
@@ -57,17 +84,32 @@ namespace Quarry {
 	QUnsignedLongLong,
     };
 
+    static std::string numberTypeStrs[] = {
+    "Long Double",
+    "Double",
+    "Float",
+    "Int",
+    "Long",
+    "Long Long",
+    "Unsigned Int",
+    "Unsigned Long",
+    "Unsigned Long Long"
+    };
+
+    std::string inputPtrToString(const unsigned char *ptr, std::size_t len);
+    
     class Token{
     public:
 	const int line;
 	const int column;
 	const TokenType tokenType;
+	const unsigned char *const textPtr;
+	const std::size_t length;
 
-	QUARRY_EXPORT Token(int line, int column, enum TokenType t);
-	QUARRY_EXPORT Token(const Token &other);
-	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
-	    out << "{(" << line << "," << column << ")" << tokenType << "}" << std::endl;
-	}
+	//QUARRY_EXPORT Token(int line, int column, enum TokenType t);
+	QUARRY_EXPORT  Token(int l, int c, enum TokenType t, std::size_t len, const unsigned char *p );
+	
+	QUARRY_EXPORT virtual void writeTo(std::ostream &out) ;
 
 	QUARRY_EXPORT virtual ~Token() {}
     };
@@ -76,23 +118,19 @@ namespace Quarry {
 	class GenericToken : public Token{
     public:
         const T value;
-         QUARRY_EXPORT GenericToken(int line, int column,const T &v)
-               : Token(line, column, genericType), value(v) {
+
+	QUARRY_EXPORT GenericToken(int line, int column,const T &v, std::size_t len,const unsigned char *p)
+	    : Token(line, column, genericType,len, p), value(v) {
 	}
 
-	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
-	    out << "{(" << line << "," << column << ") type:" << tokenType <<   "}" << std::endl;
-	}
     };
 
     class NumericalToken : public Token {
     public:
 	const QNumberType numberType;
-	const std::string text;
-	QUARRY_EXPORT NumericalToken(int line, int column, QNumberType nt, const std::string &s)
-	    :Token(line, column - s.length(), NUMBER),
-	    numberType(nt),
-	    text(s)
+	QUARRY_EXPORT NumericalToken(int line, int column, QNumberType nt, std::size_t len, const unsigned char *cptr)
+	    :Token(line, column - len, NUMBER, len, cptr),
+	    numberType(nt)
 	 {
 	 }
     };
@@ -101,20 +139,24 @@ namespace Quarry {
     class NumberToken : public NumericalToken {
     public:
 	const T value;
-	QUARRY_EXPORT NumberToken(int line, int column, const std::string &txt, const T v)
-	    : NumericalToken(line, column, nt, txt),
+
+	QUARRY_EXPORT NumberToken(int line, int column,  const T v, std::size_t len, const unsigned char *cptr)
+	    : NumericalToken(line, column, nt, len, cptr),
 	    value(v) {}
 
-
 	QUARRY_EXPORT virtual void writeTo(std::ostream &out) {
-	    out << "{(" << line << "," << column << ")  " << value << " [" << text << "]}" << std::endl;
+	    out << "{(" << line << "," << column << ")  " << value << " " <<  numberTypeStrs[nt] <<" [" << inputPtrToString(textPtr, length) << "]}" << std::endl;
 	}
     };
 
+    class ErrorToken : public Token {
+    public:
+	const std::string message;
+	QUARRY_EXPORT ErrorToken(int line,int column, std::string msg) : Token(line, column, ERROR, 0, nullptr), message(msg) {}
+    };
     typedef GenericToken<int, KEYWORD> Keyword;
     typedef GenericToken<int, OPERATOR> Operator;
     
-    typedef GenericToken<std::string, ERROR> ErrorToken;
     typedef GenericToken<std::u32string, STRING> StringToken;
     typedef GenericToken<std::string, IDENT> IdentifierToken;
     typedef GenericToken<std::string, IDENT> OperatorId;
@@ -122,8 +164,6 @@ namespace Quarry {
     typedef GenericToken<std::string, META_ID> MetaToken;
     typedef GenericToken<unsigned int, META_ID> ReferredId; 
     typedef GenericToken<bool, BOOL> BoolToken;
-    typedef GenericToken<std::string, COMMENT> CommentToken;
-
     
     typedef NumberToken<unsigned int, QUnsignedInt> UIntToken;
     typedef NumberToken<unsigned long, QUnsignedLong> ULongToken;

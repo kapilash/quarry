@@ -55,8 +55,10 @@ namespace Quarry {
 	Token* singleCharLexer(QReader &reader, QContext &context) {
 	int col = reader.getCol();
 	int line = reader.getLine();
+	const unsigned char *initPtr = reader.current();
+	std::size_t pos = reader.currPosition();
 	reader.next();
-	return new Token(line, col, t);
+	return new Token(line, col, t, (reader.currPosition() - pos), initPtr );
     }
 
     QUARRY_EXPORT Token* spaceLexer(QReader &reader, QContext &context);

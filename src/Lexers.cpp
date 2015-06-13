@@ -39,20 +39,20 @@ namespace Quarry {
         
     // this is expected to be called only after the first has already been consumed.
     template <char begin='/', char second = '*' >
-        Token *genericBlockComment(QReader &reader, QContext &context) {
+    Token *genericBlockComment(std::size_t initPos, const unsigned char *initPtr, QReader &reader, QContext &context) {
             int line = reader.getLine();
             int col = reader.getCol()-1;
 	    int initCol = reader.getCol();
-            std::string text;
             int count = 1;
             reader.next();
 
             while (reader.hasMore()) {
                 auto c = reader.next();
+
                 if ( c > 127) {
                     // this is the beginning of a UTF8 value
                     while (reader.hasMore() && reader.peekNext() > 127) {
-                        text.push_back(reader.next());
+                        reader.next();
                     }
                 }
                 else if ( c == '\n') {
@@ -64,44 +64,49 @@ namespace Quarry {
                     count--;
                     reader.next();
                     if (count < 1) {
+			
                         break;
                     }
-                    text.push_back(c); text.push_back(begin);
                 }
                 else if (c == begin && reader.hasMore() && (reader.peekNext() == second)) {
-                    text.push_back(c); text.push_back(reader.next());
+                    reader.next();
                     col++;
                     count++;
                 }
                 else {
-                    text.push_back(c);
                 }
                 col++;
             }
 	    reader.addColumns(col);
-            return new CommentToken(line, initCol, text);
+	    std::size_t tokenLength = reader.currPosition() - initPos;
+            return new Token(line, initCol, COMMENT, tokenLength, initPtr);
         }
 
     Token* csComments(QReader &reader, QContext &context) {
 	auto line = reader.getLine();
+	const unsigned char* initPtr = reader.current();
+	std::size_t initPos = reader.currPosition();
 	reader.next();
+
+
         auto col = reader.getCol();
         if (reader.hasMore() && reader.peekNext() == '/') {
-            std::string text("//");
             while (reader.hasMore() && reader.peekNext() != '\n') {
-                text.push_back(reader.next());
-            }
-            if (reader.hasMore())
                 reader.next();
-            return new CommentToken(line, col, text);
+            }
+            if (reader.hasMore()) {
+                reader.next();
+	    }
+	    
+            return new Token(line, col, COMMENT, (reader.currPosition() - initPos), initPtr);
         }
         else if (reader.hasMore() && reader.peekNext() == '*') {
-            return genericBlockComment<>(reader, context);
+            return genericBlockComment<>(initPos, initPtr, reader, context);
         }
         else {
             std::string t;
             t.push_back(reader.next());
-            return new Operator(reader.getLine(), col, context.operatorIndex(t));
+            return new Operator(reader.getLine(), col, context.operatorIndex(t), 1, initPtr);
         }
     }
     
@@ -124,13 +129,15 @@ namespace Quarry {
 		}
 	    }
 	}
-	return new GenericToken<std::string, ERROR>(line, col, std::move(text)); 
+	return new ErrorToken(line, col, std::move(text)); 
     }
 
     Token*  spaceLexer(QReader &reader, QContext &context) {
 	auto line = reader.getLine();
 	auto col = reader.getCol();
 	int initCol = col;
+	unsigned const char *begin = reader.current();
+	std::size_t pos = reader.currPosition();
 	auto c = reader.next();
 	if (c == '\n')
 	    col = 0;
@@ -149,7 +156,7 @@ namespace Quarry {
 	       col++;
 	}
 	reader.addColumns(col);
-	return new Token(line, initCol, WHITESPACE);
+	return new Token(line, initCol, WHITESPACE, (reader.currPosition() - pos), begin);
     }
 
     
