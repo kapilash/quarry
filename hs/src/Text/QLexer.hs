@@ -5,11 +5,13 @@ import Control.Applicative
 import Data.Functor
 import Control.Monad
 import qualified Data.List as Lst
+import Data.Char
 
 data LexInput = LexInput !String !Int !Int
                 deriving Show
 
 data Lexer a = Lexer { unLex :: LexInput -> ((Either String a), LexInput) }
+
 
 
 retLexer :: a -> Lexer a
@@ -72,11 +74,11 @@ newLine = Lexer newLine'
     newLine' i@(LexInput ('\n':rest) l _)      = (Right (), LexInput rest (l+1) 0)
     newLine' i  = (Left "Expected EOL", i)
 
-char :: Char -> Lexer Char
+{- char :: Char -> Lexer Char
 char c = Lexer char'
   where char' i@(LexInput (a:rest) ln col) = if a == c then  (Right a, LexInput rest ln (col + 1))
                                              else (Left $ "Expected " ++ (show c) ++ " found " ++ (show a), i)
-        char' i                         = (Left $ "EOF while looking for " ++ show c, i)
+        char' i                         = (Left $ "EOF while looking for " ++ show c, i) -}
 
 peek :: Lexer Char
 peek  = Lexer peek'
@@ -89,6 +91,26 @@ anyChar = do
    if c == '\r' || (c == '\n')
      then (newLine >> return '\n')
      else char c
+
+matches :: (Char -> Bool) -> Lexer Char
+matches pred =   Lexer matches'
+  where matches' i@(LexInput (a:rest) ln col) = if (pred a) && (a == '\n')
+                                                then (Right a, LexInput rest (ln+1) 0 )
+                                                else if pred a then (Right a, LexInput rest ln (col + 1))
+                                                     else (Left "predicate fail", i)
+        matches' i                            = (Left "EOF", i)
+
+        
+char :: Char -> Lexer Char
+char c = matches (== c)
+
+isMatchFor :: (Char -> Bool) -> Lexer Bool
+isMatchFor pred = Lexer matches'
+   where matches' i@(LexInput (a:rest) ln col) = (Right (pred a), i)
+         matches' i                            = (Right False, i)
+
+optDefault :: Lexer a -> a -> Lexer a
+optDefault lexer defval = lexer <|> (return defval)
 
 keyword :: String -> Lexer String
 keyword str = Lexer kw'
@@ -126,3 +148,59 @@ csComments = csLineComment <|> csBlockComment
        where csLineComment = do {keyword "//"; skipTill newLine}
              csBlockComment = do {keyword "/*"; skipTill (keyword "*/")}
 
+
+sign :: Lexer Char
+sign =  optDefault plusOrMinus '+'
+   where plusOrMinus = (char '+') <|> (char '-')
+
+digits :: Lexer String         
+digits = while1 isDigit
+
+hexDigits = while1 isHexDigit
+ where f c = (c >= '0' && c <= '9') 
+             || (c >= 'A' && c <= 'F')
+             || (c >= 'a' && c <= 'f')
+       
+
+double :: Lexer Double
+double =   do
+  inits <- digits
+  char '.'
+  dgts <- digits
+  power <- exp <|> (return "")
+  return . read $  inits ++ ('.' : dgts) ++ power
+  where
+    exp = do
+      c <- matches (\x -> x == 'E' || x == 'e')
+      s <- sign
+      dgts <- digits
+      return $ c:s:dgts
+
+hexaDecimal :: Lexer Integer
+hexaDecimal = do
+  char '0'
+  matches (\x -> x == 'x' || x == 'X')
+  dgts <- hexDigits
+  return $ read ("0X" ++ dgts)
+
+octal :: Lexer Integer
+octal = do
+  char '0'
+  matches (\x -> x == 'O' || x == 'o')
+  dgts <- while1 isOctDigit
+  return . read $ ("0O" ++ dgts)
+
+binary :: Lexer Integer
+binary = do
+  char '0'
+  matches (\x -> x == 'b' || x == 'B')
+  bools <-    while1 (\x -> x == '0' || x == '1')
+  return . foldl f 0 . map (\x -> x == '1') $ bools
+ where
+   f x True = 2*x + 1
+   f x _    = 2*x
+  
+decimal :: Lexer Integer
+decimal = read <$> digits 
+
+integral = hexaDecimal <|> octal <|> binary <|> decimal

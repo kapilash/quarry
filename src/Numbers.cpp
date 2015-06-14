@@ -16,6 +16,12 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 namespace Quarry {
 
+    // The below code is messy. It needs to be improved. But later on.
+    // Following is the suggested approach -
+    // Let the lexer just scan and return only the relevant number of bytes + some metadata
+    // The C++ guy takes the metadata and the length and creates an instance of appropriate class.
+    // The C flow will just consume the bytes, ignoring the metadata.
+    // But all that for a later date . TODO
     template<typename numeric>
     static numeric toNumber(unsigned char c) {
 	numeric v = 0;

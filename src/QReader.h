@@ -30,6 +30,18 @@ namespace Quarry {
 	  return c;
 	}
 
+	// TODO:
+	// Move the code for converting bytes to Char32 here. Then column increment also happens here.
+	// That way, no lexer will ever have to worry about the column number.
+	// It might mean, it would be upto the parser to differentiate between a normal identifier or a keyword. So be it.
+	// What would be the point of the QContext, then?
+	inline char32_t nextChar() {
+	    if (bytes[position] < 128) {
+		return (char32_t)(bytes[position]);
+	    }
+	    return 0;
+	}
+
 	inline const unsigned char* current() {
 	  return &(bytes[position]);
 	}
