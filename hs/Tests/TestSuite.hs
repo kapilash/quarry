@@ -3,6 +3,9 @@ module Main where
 import Text.QToken
 import Text.QLexer
 import Test.QuickCheck
+import Test.Framework as TF (defaultMain, testGroup, Test)
+import Test.Framework.Providers.HUnit
+import Test.Framework.Providers.QuickCheck2 (testProperty)
 
 
 newLinesGen :: Gen LexInput
@@ -57,5 +60,12 @@ integralGen = do
   digits <- oneof [decimalGen, octalGen, binaryGen, hexGen]
   return $ LexInput (digits ++ "REMAINING") l c
 
-main = do
-  print "hey"
+main = defaultMain tests
+
+
+tests :: [TF.Test]
+tests = [
+        testGroup "QuickCheck integral" [
+                testProperty "readIntegers"        remainCheckProp
+                ]
+        ]

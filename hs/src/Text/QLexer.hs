@@ -7,6 +7,24 @@ import Control.Monad
 import qualified Data.List as Lst
 import Data.Char
 
+{-
+Tried to integrate with the parsers library. But encountered infinite loops.
+For instance - calling integer of Text.Parser.Token.integer
+
+I suspect this is to do with the way bindLexer is below. We have built-in backtracking.
+We do not need try.
+
+Another problem with the parsers library is  that the tokens are all based on Haskell Report. For instance, integer is defined
+based on the syntax of integer literals in Haskell. It means, no binaries. 
+I really want support for multiple Languages. So we are ignoring this for now.
+Only nagging issue is - we still do not know if my approach is going to hurt me later on.
+
+import Text.Parser.Combinators
+import Text.Parser.LookAhead
+import Text.Parser.Char
+import qualified Text.Parser.Token as T
+-}
+
 data LexInput = LexInput !String !Int !Int
                 deriving Show
 
