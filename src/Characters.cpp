@@ -430,8 +430,7 @@ namespace Quarry {
 		c = reader.peekNext();
 	    }
 	    reader.addColumns(col);
-	    auto index = context.keywordIndex(text);
-	    
+	    auto index = context.operatorIndex(text);
 	    if (index < 0)
 		return new OperatorId(line, reader.getCol(), text, (reader.currPosition() - initPos), begin);
 

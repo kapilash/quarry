@@ -164,11 +164,4 @@ namespace Quarry {
 	
     }
     
-    void addGroupLexers (QContext &context) {
-	
-    }
-
-    void addWhitespaceLexers (QContext  &context) {
-    }
-
 }

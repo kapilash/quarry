@@ -11,66 +11,29 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 */
 
 #pragma once
-
-#include <boost/iostreams/device/mapped_file.hpp>
-#include <iostream>
 #include "quarry_export.h"
 
-namespace Quarry {
-    class QReader{
-    private:
-	QUARRY_EXPORT void read();
-    public:
-	QUARRY_EXPORT QReader(const char *fileName);
-	QUARRY_EXPORT QReader(const unsigned char *byteArray, std::size_t length, int l, int col);
+#ifdef __cplusplus
+extern "C" {
+#endif    
 
-	inline bool hasMore()  {
-	  return (position < length);
-	}
-            
-	inline unsigned char peekNext() const{
-	    return bytes[position];
-	}
-            
-	inline unsigned char next() {
-	    unsigned char c = bytes[position];
-	    position++;
-	  if (c == '\n') {
-	      ++line;
-	      column = 1;
-	  }
-	  return c;
-	}
-
-	char32_t nextChar() ;
-
-	inline const unsigned char* current() {
-	  return &(bytes[position]);
-	}
-
-	inline std::size_t currPosition() const {
-	    return position;
-	}
-	
-	inline int getCol() { return column;}
-            
-	inline int getLine() { return line;}
-
-	inline void setColumn(int c) { column = c; }
-
-	inline void addColumns(int c) { column += c; }
-
-	QUARRY_EXPORT void appendWhile(bool (*predicate)(unsigned char), std::string&);
-	QUARRY_EXPORT int till(bool (*predicate)(unsigned char));
-	QUARRY_EXPORT int asLongAs(bool (*predicate)(unsigned char));
-
-	QUARRY_EXPORT ~QReader();
-    private:
-	boost::iostreams::mapped_file_source file;
-	const unsigned char *bytes;
-	std::size_t length;
-	std::size_t position;
+    struct quarry_Token {
 	int line;
 	int column;
+	unsigned int tokenType;
+	size_t length;
+	unsigned char *textPtr;
     };
+
+    QUARRY_EXPORT void *quarry_fromFile(int lang, const char *fileName);
+    QUARRY_EXPORT void *quarry_fromStr(int lang, const unsigned char *byteArray, unsigned long length, int l, int col);
+
+    QUARRY_EXPORT struct quarry_Token *quarry_nextToken(void *quarry);
+
+    QUARRY_EXPORT void quarry_freeToken(struct quarry_Token *t);
+
+    QUARRY_EXPORT void quarry_close(void *p);
+
+#ifdef __cplusplus    
 }
+#endif

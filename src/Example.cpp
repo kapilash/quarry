@@ -10,10 +10,12 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 3) THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+
+#include <iostream>
+#include <string>
 #define QUARRY_EXPORT
 #include "Quarry.h"
+#include <cstdio>
 
     enum TokenType {
         ERROR,
@@ -42,7 +44,7 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
         QEOF
     };
 
-    static char** tokenTypeStrs = {
+static std::string  tokenTypeStrs[] = {
     "ERROR",
     "KEYWORD",
     "IDENT",
@@ -72,22 +74,22 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 void printSlab(struct quarry_Token *slab){
   int index = 0;
   if(slab == NULL){
-    printf("NULL\n");
+      std::cout << "NULL\n";
   }
-  printf("slab{");
-  printf("line = %d;",slab->line);
-  printf("col = %d;",slab->column);
-  printf("length = %d;",slab->length);
-  printf("content = {");
+  std::cout <<"slab{";
+  std::cout <<"line = " << slab->line << ";";
+  std::cout <<"col =" << slab->column << ";";
+  std::cout <<"length = " << slab->length << ";";
+  std::cout <<"content = {";
   for(index = 0;index < slab->length;index++){
     if(slab->textPtr[index] != '\n')
-      printf("%c",slab->textPtr[index]);
+	std::cout << slab->textPtr[index];
     else
-      printf("\\n");
+      std::cout <<"\\n";
   }
-  printf("}");
-  printf("tokenType = %s", tokenTypeStrs[slab->tokenType]);
-  printf(";}\n");
+  std::cout <<"}";
+  std::cout <<"tokenType = "<< tokenTypeStrs[slab->tokenType];
+  std::cout <<";}" << std::endl;
 }
 
 int main(int argc, char **argv){
@@ -105,7 +107,8 @@ int main(int argc, char **argv){
   if(argc > 2){
     toPrintType = atoi(argv[2]);
   }
-  reader = quarry_fromFile(argv[1],1);
+
+  reader = quarry_fromFile(1,argv[1]);
   while(toContinue){
     slab = quarry_nextToken(reader);
     l++;
