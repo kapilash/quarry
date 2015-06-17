@@ -42,7 +42,7 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
         QEOF
     };
 
-    static char** tokenTypeStrs = {
+    static char* tokenTypeStrs[] = {
     "ERROR",
     "KEYWORD",
     "IDENT",
@@ -105,12 +105,16 @@ int main(int argc, char **argv){
   if(argc > 2){
     toPrintType = atoi(argv[2]);
   }
-  reader = quarry_fromFile(argv[1],1);
+
+
+  reader = quarry_fromFile(1,argv[1]);
+
   while(toContinue){
+    
     slab = quarry_nextToken(reader);
+
     l++;
     printSlab(slab);
-    
      
     if(slab->tokenType == COMMENT)
       comments++;
@@ -118,6 +122,8 @@ int main(int argc, char **argv){
       toContinue = 0;
     lines = slab->line;
     quarry_freeToken(slab);
+    printf("nextToken\n");
+
   }
   quarry_close(reader);
   printf("slabs = %ld\n",l);

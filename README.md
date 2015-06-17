@@ -1,32 +1,30 @@
 # quarry
 
-Quarry is a library for getting crude tokens from programming languages.
+Quarry is a library for getting tokens from  UTF8 encoded text files.
 
-The library can be used to read a source file in terms of "Slabs".
+The library can be used to tokenize a source file or an in memory string.
 
-## Slab 
+## Token
 A slab is a structure with:
-*  type (an enum)
+*  tokenType (an enum)
 * line number
 * column number
 * text 
-* some metadata (unsigned 32 bit number)
 
-Think slab as a crude token.
 
-### Slab Types
-The following are the various types of slabs
+
+### Token Types
+The various types of tokens are as follows
 *  __Error__ 
 *  __Keyword__ currently c and java keywords are supported. Library is
 flexible enough to support a new set of keywords. Adding a new set is semi
-automated. (metadata = index of the keyword when keywords are sorted in alphabetical order).
-*  __Identifier__ a valid java identifier  (UTF-8) with a '$'. (metadata for
-the slab is the hash code computed using FNV-1a algorithm).
-*  __String__  Anything between double quotes (but the second double quote
-should not be preceded by an unescaped backslash)
+automated. 
+*  __Identifier__ a valid java identifier  (UTF-8) with a '$'.
+
+*  __String__  Anything between double quotes (c#, java or c style string literals)
 *  __Char__ same as double String but with single quotes
 *  __Numbers__ decimals, binary, hexadecimal and octal numbers. The syntax follows c
-rules. (metadata = 0 ,1,2 and 3 for decimal,binary,hexadecimal and octals respectively).
+rules. 
 *  __Operator__  asterisk etc
 *  __Grouping__ brackets (square,circular,curly and angular)
 *  __Punctuation__ colon, semicolon, dot, comma, question mark, exclamation
@@ -37,37 +35,37 @@ block comments and 1 for line comments)
 *  __NewLine__ LF or CRLF
 *  __EOF__ a token representing an end of file (this occurs after the last
 line)
-* __MetaId__ In case of C, variables beginning with '#' are interpreted as
-meta identifiers. In case of Java, variables beginning with '@' are read as
-meta Ids. By default there are no meta identifiers.
+
 
 
 ## Example
-please consult exquarry.c
+please consult example/example.c
 
 ## Build
-> make check
+> mkdir build
+> cd build
+> cmake .. -G <Your Generator> [-DBOOST_DIR=path-to-boost-build-dir]
 
-will build and run the tests
 
-> make example
+For building the example,
+> cd example
+> mkdir build
+> cmake .. -G <Your Generator> -DQU_DIR=<path-quarry-dir>
 
-builds an executable exquarry.out which prints some statistics about a given
-java source code
+The cmake lists file assumes that the build dir is named build and is inside the root folder
+
+builds an executable exquarry.out which prints some statistics about a given java source code
 
 ## Notes
 
-* There is a hard limit on the size of individual slab. For any given slab, only
-the first 4096 bytes will be considered. The rest will be ignored.
+* When a file is given as an input, it is memory-mapped and read
 
-* The return value from a quarry_read should not be deleted. More over, it is
-intended to be copied immediately and freed (using quarry_freeSlab) before the
-next call to quarry_read. (The ideal use of this value is to copy the contents into a GC'ed 
-memory and releasing the slab).
+* The return value from a quarry_nextToken should not be deleted. More over, it is
+intended to be copied immediately and freed (using quarry_freeToken) 
 
 ## TODO
-* add tests for UTF-8 identifiers
-* add comprehensive tests for c
-* add comprehensive tests for  operators
-* add support numbers ending with LL and ULL
+* C++ API to be made more usable
+* Proper packaging
+* Clean up Numbers.cpp
+* UTF-8 decoding is duplicated at two places.
 
