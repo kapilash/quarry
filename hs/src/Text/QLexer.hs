@@ -92,11 +92,6 @@ newLine = Lexer newLine'
     newLine' i@(LexInput ('\n':rest) l _)      = (Right (), LexInput rest (l+1) 0)
     newLine' i  = (Left "Expected EOL", i)
 
-{- char :: Char -> Lexer Char
-char c = Lexer char'
-  where char' i@(LexInput (a:rest) ln col) = if a == c then  (Right a, LexInput rest ln (col + 1))
-                                             else (Left $ "Expected " ++ (show c) ++ " found " ++ (show a), i)
-        char' i                         = (Left $ "EOF while looking for " ++ show c, i) -}
 
 peek :: Lexer Char
 peek  = Lexer peek'
@@ -163,13 +158,20 @@ skipTill :: Lexer a -> Lexer ()
 skipTill p = ( p >> return ()) <|> (anyChar >> (skipTill p))
 
 csComments = csLineComment <|> csBlockComment
-       where csLineComment = do {keyword "//"; skipTill newLine}
+       where csLineComment = do { keyword "//"; many (matches $ \x -> x /= '\r' && x /= '\n'); newLine }
              csBlockComment = do {keyword "/*"; skipTill (keyword "*/")}
 
 
 sign :: Lexer Char
 sign =  optDefault plusOrMinus '+'
    where plusOrMinus = (char '+') <|> (char '-')
+
+numPrefix :: (Num a) => Lexer a
+numPrefix = do
+    c <- sign
+    if c == '+' 
+        then return 1
+        else return (-1)
 
 digits :: Lexer String         
 digits = while1 isDigit
@@ -193,6 +195,18 @@ double =   do
       s <- sign
       dgts <- digits
       return $ c:s:dgts
+
+csDouble :: Lexer QToken
+csDouble = do
+    d <- double
+    sfx <- optional (suffixM <|> suffixD <|> suffixF <|> suffixL)
+    return $ QDouble  d sfx
+ where
+    suffixM = (matches (\x -> x == 'M' || x == 'm')) >> return SuffixM
+    suffixF = (matches (\x -> x == 'F' || x == 'f')) >> return SuffixF
+    suffixD = (matches (\x -> x == 'D' || x == 'd')) >> return SuffixD
+    suffixL = (matches (\x -> x == 'L' || x == 'l')) >> return SuffixD
+
 
 hexaDecimal :: Lexer Integer
 hexaDecimal = do
@@ -222,3 +236,83 @@ decimal :: Lexer Integer
 decimal = read <$> digits 
 
 integral = hexaDecimal <|> octal <|> binary <|> decimal
+
+csIntegral :: Lexer QToken 
+csIntegral = do
+    i <- integral
+    sfx <- optional (suffixUL <|> suffixLU <|> suffixU <|> suffixL)
+    return $ QIntegral i sfx
+  where
+     u = matches (\x -> x == 'U' || x == 'u')
+     l' = matches (\x -> x == 'L' || x == 'l')
+     l  = l' >> (optional l')
+     suffixUL = (u >> l >> return SuffixUL)
+     suffixLU = (l >> u >> return SuffixUL)
+     suffixL  = l >> return SuffixL
+     suffixU  = u >> return SuffixU 
+
+plus :: Lexer QToken
+plus = do
+    char '+'
+    d <- optional (csDouble <|> csIntegral)
+    case d of
+        Nothing  -> return $ QOperator "+"
+        (Just x) -> return x
+
+minus :: Lexer QToken
+minus = do
+    char '-'
+    d <- optional (csDouble <|> csIntegral)
+    case d of
+       (Just (QDouble d s))     -> return $ QDouble (-1*d) s
+       (Just (QIntegral i sfx)) -> return $ QIntegral (-1*i) sfx
+       Nothing                  -> return $ QOperator "-"
+
+escapedChar :: Lexer Char
+escapedChar = do
+    char '\\'
+    c <- matches (`elem` "'\"\\0abfnrtvxuU")
+    case c of
+      'n'  -> return '\n'
+      'a'  -> return '\a'
+      'r'  -> return '\r'
+      'v'  -> return '\v'
+      't'  -> return '\t'
+      '0'  -> return '\0'
+      '\''  -> return c
+      '\"' -> return c
+      '\\' -> return c
+      _   -> do { v <- hexDigits;
+                  return . chr . read $ "0x" ++ v} 
+
+charLiteral :: Lexer QToken
+charLiteral = do
+    char '\''
+    c <- (escapedChar <|> anyChar)
+    char '\''
+    return $ QCharLiteral c
+
+strLiteral :: Lexer QToken
+strLiteral = do
+    char '"'
+    cs <- many (escapedChar <|> (matches $ \x -> x /= '"'))
+    char '"'
+    return $ QStrLiteral cs
+
+csIdent :: Lexer QToken
+csIdent = do
+    c <- anyChar
+    cs <- many (matches $ \x -> isAlphaNum x || x == '_' || x == '$' || (ord x > 128))
+    return $ QIdent (c:cs)
+
+csOper :: Lexer QToken
+csOper = do
+    c <- anyChar
+    cs <- many (matches $ flip elem "~`!@$%^&*-+=/.,<>:?%")
+    return $ QOperator (c:cs)
+
+
+singleCharToken :: QToken -> Lexer QToken
+singleCharToken t = do
+     anyChar
+     return t
