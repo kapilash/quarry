@@ -15,7 +15,7 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include <string>
 #define QUARRY_EXPORT
 #include "Quarry.h"
-#include <cstdio>
+#include <chrono>
 
     enum TokenType {
         ERROR,
@@ -98,21 +98,23 @@ int main(int argc, char **argv){
   long l = 0;
   int lines = 0;
   int comments  = 0;
-  int toPrintType = 100;
+  bool toPrint = false;
   int toContinue = 1;
   if(argc <2){
-    printf("need a file\n");
+    std::cout << "need a file" << std::endl;
     exit(1);
   }
   if(argc > 2){
-    toPrintType = atoi(argv[2]);
+    toPrint = true;
   }
-
+  auto start = std::chrono::high_resolution_clock::now();
   reader = quarry_fromFile(1,argv[1]);
   while(toContinue){
     slab = quarry_nextToken(reader);
     l++;
-    printSlab(slab);
+
+    if(toPrint)
+      printSlab(slab);
     
      
     if(slab->tokenType == COMMENT)
@@ -123,8 +125,10 @@ int main(int argc, char **argv){
     quarry_freeToken(slab);
   }
   quarry_close(reader);
-  printf("slabs = %ld\n",l);
-  printf("lines = %d\n",lines);
-  printf("comments = %d\n",comments);
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::cout << "slabs = " << l << std::endl;
+  std::cout << "lines = " << lines << std::endl;
+  std::cout << "comments = " << comments << std::endl;
+  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(finish-start).count() << "ms\n";
   
 }

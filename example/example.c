@@ -96,14 +96,14 @@ int main(int argc, char **argv){
   long l = 0;
   int lines = 0;
   int comments  = 0;
-  int toPrintType = 100;
+  int toPrintTokens = 0;
   int toContinue = 1;
   if(argc <2){
     printf("need a file\n");
     exit(1);
   }
   if(argc > 2){
-    toPrintType = atoi(argv[2]);
+    toPrintTokens = 1;
   }
 
 
@@ -114,7 +114,8 @@ int main(int argc, char **argv){
     slab = quarry_nextToken(reader);
 
     l++;
-    printSlab(slab);
+    if (toPrintTokens == 1)
+      printSlab(slab);
      
     if(slab->tokenType == COMMENT)
       comments++;
@@ -122,11 +123,10 @@ int main(int argc, char **argv){
       toContinue = 0;
     lines = slab->line;
     quarry_freeToken(slab);
-    printf("nextToken\n");
 
   }
   quarry_close(reader);
-  printf("slabs = %ld\n",l);
+  printf("tokens = %ld\n",l);
   printf("lines = %d\n",lines);
   printf("comments = %d\n",comments);
   
