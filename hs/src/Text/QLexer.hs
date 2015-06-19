@@ -246,11 +246,24 @@ csIntegral = do
      u = matches (\x -> x == 'U' || x == 'u')
      l' = matches (\x -> x == 'L' || x == 'l')
      l  = l' >> (optional l')
-     suffixUL = (u >> l >> return SuffixUL)
+     suffixUL = do { u; l; return SuffixUL}
      suffixLU = (l >> u >> return SuffixUL)
      suffixL  = l >> return SuffixL
      suffixU  = u >> return SuffixU 
 
+suffixUTest = do
+      sfx <- optional (suffixUL <|> suffixLU <|> suffixU <|> suffixL)
+      return sfx
+    where
+     u = matches (\x -> x == 'U' || x == 'u')
+     l' = matches (\x -> x == 'L' || x == 'l')
+     l  = l' >> (optional l')
+     suffixUL = do { u; l; return SuffixUL}
+     suffixLU = (l >> u >> return SuffixUL)
+     suffixL  = l >> return SuffixL
+     suffixU  = u >> return SuffixU 
+
+                
 plus :: Lexer QToken
 plus = do
     char '+'
@@ -316,3 +329,11 @@ singleCharToken :: QToken -> Lexer QToken
 singleCharToken t = do
      anyChar
      return t
+
+
+csToken = csDouble <|> csIntegral
+            
+eof :: Lexer QToken
+eof = Lexer eof'
+    where eof' i@(LexInput [] _ _) = (Right QEOF, i)
+          eof' i                 = (Left "Excessive data", i)
