@@ -58,7 +58,7 @@ Currently, the library is *acceptably* fast. Here are some numbers on my develop
 
 
 
-  | File size                         |         Time to scan till the end and print number of lines and comments  |
+   File size                         |         Time to scan till the end and print number of lines and comments  
   |-----------------------------------|---------------------------------------------------------------------------|
   | 127722 bytes (3807 lines)         |  14 to 20 milliseconds                                                    |
   -----------------------------------------------------------------------------------------------------------------
