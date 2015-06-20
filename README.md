@@ -65,10 +65,10 @@ Currently, the library is *acceptably* fast. Here are some numbers on my develop
    255444 bytes (7614 lines)         | 27 to 33 milliseconds                                                     
   -----------------------------------------------------------------------------------------------------------------
    510888 bytes (15228 lines)        |  53 to 65 milliseconds                                                    
-  |---------------------------------------------------------------------------------------------------------------|
-  |1021776 bytes (30456 lines)        | 120 milli seconds                                                         |
+  ---------------------------------------------------------------------------------------------------------------
+  1021776 bytes (30456 lines)        | 120 milli seconds                                                         
   -----------------------------------------------------------------------------------------------------------------
-  | 65,393,664 bytes (1,949,184 lines)|  6811 milli seconds                                                       |
+   65,393,664 bytes (1,949,184 lines)|  6811 milli seconds                                                       
   -----------------------------------------------------------------------------------------------------------------
 
 The above numbers are admittedly crude. While the file was taken at random, it may not contain all sorts of tokens. However, a 7 sec time to tokenize approx 2MLOC seems
