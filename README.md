@@ -28,7 +28,7 @@ please consult example/example.c
 
 ## Build
 
-You need cmake (version 3 or above) and boost.
+You need cmake (version 3 or above) and boost (http://wwww.boost.org).
 
 Create a directory in the root folder (or any other place actually).
 
@@ -52,8 +52,16 @@ Building the example in the example directory is a little crude, for now. Just l
 * The return value from a quarry_nextToken should not be deleted. More over, it is
 intended to be copied immediately and freed (using quarry_freeToken) 
 
+* Currently, it is *acceptably* fast. Some numbers on my developer machine ( a low end dual core Intel with 4GB ram, circa 2009):
+
+** for 3807 lines of java file of size (127,722 bytes) from a very respectable java source repository (as in, a largish java file with regular spaces and comments), it takes 14 to 20 milli seconds.
+
+** when the same file is made to a file of size (65,393,664 bytes) by repeatedly appending the contents to itself, so that we have about 2 million lines of code,
+the example program takes slightly less than 7 seconds to scan the same.
+
+
 ## TODO
-* C++ API to be made more usable
+* API , both the C and the C++ versions, to be **polished**. 
 * Proper packaging
 * Clean up Numbers.cpp
 * UTF-8 decoding code is duplicated at two places.
