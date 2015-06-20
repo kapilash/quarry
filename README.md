@@ -17,8 +17,8 @@ A token is a structure with:
 
 ### Eventually,
 
-we will have further api that can extract other useful info given a token. At the moment, it is of little use other than that
-things like a literate programming tool.
+we will have further api that can extract other useful info given a token. At the moment, the library is of little use other than for simple language preprocessing
+or  literate programming tools.
 
 
 
@@ -52,12 +52,25 @@ Building the example in the example directory is a little crude, for now. Just l
 * The return value from a quarry_nextToken should not be deleted. More over, it is
 intended to be copied immediately and freed (using quarry_freeToken) 
 
-* Currently, it is *acceptably* fast. Some numbers on my developer machine ( a low end dual core Intel with 4GB ram, circa 2009):
+## Performance
+Currently, the library is *acceptably* fast. Here are some numbers on my developer machine ( a low end dual core Intel with 4GB ram, circa 2009). For computing these I started with a random java file of size 3807 lines (127722) bytes, taken from a very respectable java repository, as a starting point. That is, a largish java file with regular spaces (and comments), and then repeatedly appended it to itself to make it progressively large.
 
-** for 3807 lines of java file of size (127,722 bytes) from a very respectable java source repository (as in, a largish java file with regular spaces and comments), it takes 14 to 20 milli seconds.
 
-** when the same file is made to a file of size (65,393,664 bytes) by repeatedly appending the contents to itself, so that we have about 2 million lines of code,
-the example program takes slightly less than 7 seconds to scan the same.
+  | File size                         |         Time to scan till the end and print number of lines and comments  |
+  |-----------------------------------|---------------------------------------------------------------------------|
+  | 127722 bytes (3807 lines)         |  14 to 20 milliseconds                                                    |
+  -----------------------------------------------------------------------------------------------------------------
+  | 255444 bytes (7614 lines)         | 27 to 33 milliseconds                                                     |
+  -----------------------------------------------------------------------------------------------------------------
+  | 510888 bytes (15228 lines)        |  53 to 65 milliseconds                                                    |
+  |---------------------------------------------------------------------------------------------------------------|
+  |1021776 bytes (30456 lines)        | 120 milli seconds                                                         |
+  -----------------------------------------------------------------------------------------------------------------
+  | 65,393,664 bytes (1,949,184 lines)|  6811 milli seconds                                                       |
+  -----------------------------------------------------------------------------------------------------------------
+
+The above numbers are admittedly crude. While the file was taken at random, it may not contain all sorts of tokens. However, a 7 sec time to tokenize approx 2MLOC seems
+good enough.
 
 
 ## TODO
