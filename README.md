@@ -4,37 +4,22 @@ Quarry is a library for getting tokens from  UTF8 encoded text files.
 
 The library can be used to tokenize a source file or an in memory string.
 
-## Token
-A slab is a structure with:
-*  tokenType (an enum)
-* line number
-* column number
-* text 
+## C Interface
+
+### Token
+A token is a structure with:
+*  line (an int)
+*  column (an int)
+*  tokenType (an int)
+*  pointer to an array of UTF-8 bytes representing the text of current token (This can be null for certain _obvious_ tokens)
+*  length a number indicating the length of current token. It is set to 0 when the pointer is set to nullptr.
 
 
+### Eventually,
 
-### Token Types
-The various types of tokens are as follows
-*  __Error__ 
-*  __Keyword__ currently c and java keywords are supported. Library is
-flexible enough to support a new set of keywords. Adding a new set is semi
-automated. 
-*  __Identifier__ a valid java identifier  (UTF-8) with a '$'.
+we will have further api that can extract other useful info given a token. At the moment, it is of little use other than that
+things like a literate programming tool.
 
-*  __String__  Anything between double quotes (c#, java or c style string literals)
-*  __Char__ same as double String but with single quotes
-*  __Numbers__ decimals, binary, hexadecimal and octal numbers. The syntax follows c
-rules. 
-*  __Operator__  asterisk etc
-*  __Grouping__ brackets (square,circular,curly and angular)
-*  __Punctuation__ colon, semicolon, dot, comma, question mark, exclamation
-mark 
-*  __Comment__ java style block and single line comments. (metadata = 0 for
-block comments and 1 for line comments)
-*  __Whitespace__ a space or a tab character
-*  __NewLine__ LF or CRLF
-*  __EOF__ a token representing an end of file (this occurs after the last
-line)
 
 
 
@@ -42,19 +27,23 @@ line)
 please consult example/example.c
 
 ## Build
+
+You need cmake (version 3 or above) and boost.
+
+Create a directory in the root folder (or any other place actually).
+
 > mkdir build
-> cd build
+
+Move to the build folder and use your favourite generator. For unix like systems, if boost is *installed*,  you do not need to provide a value to  BOOST_DIR.
+On windows with visual studio, you may have to. Typically, the value is the directory where you've built your boost sources.
+
+For mingw on windows, if you are using  this awesome version of mingw (http://www.nuwen.net/mingw.html), you just need to use the MSys generator. 
+
 > cmake .. -G <Your Generator> [-DBOOST_DIR=path-to-boost-build-dir]
 
 
-For building the example,
-> cd example
-> mkdir build
-> cmake .. -G <Your Generator> -DQU_DIR=<path-quarry-dir>
+Building the example in the example directory is a little crude, for now. Just look at the CMakeLists.txt or modify it appropriately.
 
-The cmake lists file assumes that the build dir is named build and is inside the root folder
-
-builds an executable exquarry.out which prints some statistics about a given java source code
 
 ## Notes
 
@@ -67,5 +56,6 @@ intended to be copied immediately and freed (using quarry_freeToken)
 * C++ API to be made more usable
 * Proper packaging
 * Clean up Numbers.cpp
-* UTF-8 decoding is duplicated at two places.
+* UTF-8 decoding code is duplicated at two places.
+
 
