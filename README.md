@@ -56,6 +56,8 @@ intended to be copied immediately and freed (using quarry_freeToken)
 Currently, the library is *acceptably* fast. Here are some numbers on my developer machine ( a low end dual core Intel with 4GB ram, circa 2009). For computing these I started with a random java file of size 3807 lines (127722) bytes, taken from a very respectable java repository, as a starting point. That is, a largish java file with regular spaces (and comments), and then repeatedly appended it to itself to make it progressively large.
 
 
+
+
   | File size                         |         Time to scan till the end and print number of lines and comments  |
   |-----------------------------------|---------------------------------------------------------------------------|
   | 127722 bytes (3807 lines)         |  14 to 20 milliseconds                                                    |
