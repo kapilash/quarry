@@ -70,64 +70,78 @@ namespace Quarry{
 	QReader reader;
 	QContext context;
 
-	QuarryHolder(int lang, const char *fileName)
+	QuarryHolder(PL lang, const char *fileName)
 	    : reader{fileName},
-	      context((PL)lang)
+	      context(lang)
 	{
 	}
-	QuarryHolder(int lang, const unsigned char *byteArray, unsigned long length, int l, int col)
+	QuarryHolder(PL lang, const unsigned char *byteArray, unsigned long length, int l, int col)
 	    :reader(byteArray,length, l, col),
-	     context((PL)lang)
+	     context(lang)
 	{
 	}
 	~QuarryHolder() {}
     };
+
+    void* fromFile(PL lang, const char *fileName) {
+	QuarryHolder *holder = new QuarryHolder(lang, fileName);
+	return holder;
+    }
+
+    void *fromStr(PL lang, const unsigned char *byteArray, unsigned long length, int l, int col)
+    {
+	QuarryHolder *holder = new Quarry::QuarryHolder(lang, byteArray, length, l, col);
+	return holder;
+    }
+
+    Token* nextToken(void *quarry) {
+	QuarryHolder *holder = reinterpret_cast<QuarryHolder *>(quarry);
+	if(holder->reader.hasMore()) {
+	    unsigned char c = holder->reader.peekNext();
+	    Lexer l = holder->context.lexer(c);
+	    return l(holder->reader, holder->context);
+	}
+	return new Token(holder->reader.getLine(), holder->reader.getCol(), QEOF,0, nullptr);
+	    
+    }
+
+    void closeQuarry(void *quarry) {
+	QuarryHolder *holder = reinterpret_cast<QuarryHolder *>(quarry);
+	delete holder;
+    }
 }
 //extern "C" {
 void *quarry_fromFile(int lang, const char *fileName)
 {
-    Quarry::QuarryHolder *holder = new Quarry::QuarryHolder(lang, fileName);
-    return holder;
+    return Quarry::fromFile((Quarry::PL)lang, fileName);
 }
 
 void *quarry_fromStr(int lang, const unsigned char *byteArray, unsigned long length, int l, int col)
 {
-    Quarry::QuarryHolder *holder = new Quarry::QuarryHolder(lang, byteArray, length, l, col);
-    return holder;
+    return Quarry::fromStr((Quarry::PL)lang, byteArray, length, l, col);
 }
 
 void quarry_close(void *p) {
-    Quarry::QuarryHolder *holder = reinterpret_cast<Quarry::QuarryHolder *>(p);
-    delete holder;
+    Quarry::closeQuarry(p);
 }
 
 struct quarry_Token *quarry_nextToken(void *quarry)
 {
-    Quarry::QuarryHolder *holder = reinterpret_cast<Quarry::QuarryHolder *>(quarry);
-    if(holder->reader.hasMore()) {
-	unsigned char c = holder->reader.peekNext();
-	Quarry::Lexer l = holder->context.lexer(c);
-	auto token = l(holder->reader, holder->context);
-	quarry_Token *t = new quarry_Token();
-	t->line = token->line;
-	t->column = token->column;
-	t->tokenType = (int)(token->tokenType);
-	t->textPtr = (unsigned char *)(token->textPtr);
-	t->length = token->length;
-	delete token;
-	return t;
-    }
-    quarry_Token *eofToken = new quarry_Token();
-    eofToken->line = holder->reader.getLine();
-    eofToken->column = holder->reader.getCol();
-    eofToken->tokenType = (int)Quarry::QEOF;
-    eofToken->length = 0;
-    eofToken->textPtr = nullptr;
-    return eofToken;
+    auto token = Quarry::nextToken(quarry);
+    quarry_Token *t = new quarry_Token();
+    t->line = token->line;
+    t->column = token->column;
+    t->tokenType = (int)(token->tokenType);
+    t->textPtr = (unsigned char *)(token->textPtr);
+    t->length = token->length;
+    t->opaque =  token;
+    return t;
 }
 
 void  quarry_freeToken(struct quarry_Token *t)
 {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(t->opaque);
+    delete inner;
     delete t;
 }
 //}

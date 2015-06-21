@@ -29,5 +29,8 @@ add_executable(qexample "Example.cpp")
 
 target_link_libraries(qexample quarry)
 
-#install (TARGETS quarry  DESTINATION lib)
-#install (FILES quarry.h DESTINATION include)
+install (TARGETS quarry  DESTINATION lib)
+install (FILES Quarry.h DESTINATION include)
+install (FILES QToken.h DESTINATION include)
+configure_file(Quarry.h Quarry.h COPYONLY)
+configure_file(QToken.h QToken.h COPYONLY)

@@ -3,8 +3,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
 FIND_LIBRARY(QUARRY_LIBRARY quarry ${QU_LIB_DIR})
-message(${QU_DIR})
-include_directories(${QU_BIN_DIR} ${QU_SRC_DIR})
+message(${QU_LIB_DIR})
+message(${QU_INC_DIR})
+include_directories(${QU_INC_DIR})
 add_executable(qexample "example.c")
 
 target_link_libraries(qexample ${QUARRY_LIBRARY})

@@ -20,10 +20,6 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include "QToken.h"
 
 namespace Quarry {
-    enum PL {
-	C = 0,
-	JAVA
-    };
 
     class QContext ;
 

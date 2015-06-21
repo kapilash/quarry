@@ -1,46 +1,32 @@
 #pragma once
 
-#include <map>
-#include <set>
+#include "QToken.h"
+#include "QReader.h"
 
 namespace Quarry {
+    enum TokenStyle {
+	CStyle,
+	CSharpStyle,
+	HaskellStyle,
+	R6RSStyle,
+	TeXStyle,
+	LaTeXStyle,
+	HTMLStyle
+    };
+    
     class QContext{
-    public:
-	QReader(const char *fileName);
-	QReader(const unsigned char *byteArray, int length, int l, int col);
-
-	bool read();
-
-	inline bool hasMore() const {
-	    return !(pos >= length);
-	}
-            
-	inline unsigned char peekNext() const{
-	    return bytes[pos];
-	}
-            
-	inline unsigned char next() {
-	    unsigned char n = bytes[pos];++pos; ++column; return n;
-	}
-
-	inline void incrementLine(){
-	    ++line;
-	    column = 1;
-	}
-            
-	inline int getCol() { return column;}
-            
-	inline int getLine() { return line;}
-
-	~QReader();
     private:
-	bool isInMemory;
-	std::FILE *fp;
-	unsigned char *bytes;
+	const TokenStyle style;
 	
-	size_t length;
-	size_t pos;
-	int line;
-	int column;
+    public:
+	QContext (TokenStyle style);
+	
+	/// Idea is, given this tokenType, QContext knows how to construct
+	/// the appropriate version of the token for the appropriate language.
+	///  This works out for identifiers, keywords, comments, punctuation, etc.
+	Token* makeToken(unsigned char *start, size_t length, TokenType tokenType);
+
+	// When the lexer knows exactly the token to be constructed.
+	Token* toToken(unsigned char *start, size_t length, int number);
     };
 }

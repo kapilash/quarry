@@ -18,6 +18,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <iostream>
 
 namespace Quarry {
+    enum PL {
+	C = 0,
+	JAVA
+    };
+
     enum TokenType {
         ERROR,
         KEYWORD,
@@ -106,7 +111,6 @@ namespace Quarry {
 	const unsigned char *const textPtr;
 	const std::size_t length;
 
-	//QUARRY_EXPORT Token(int line, int column, enum TokenType t);
 	QUARRY_EXPORT  Token(int l, int c, enum TokenType t, std::size_t len, const unsigned char *p );
 	
 	QUARRY_EXPORT virtual void writeTo(std::ostream &out) ;
@@ -176,4 +180,11 @@ namespace Quarry {
     typedef NumberToken<int, QInt> IntToken;
     typedef NumberToken<long, QLong> LongToken;
     typedef NumberToken<long long, QLongLong> LongLongToken;
+
+
+    QUARRY_EXPORT void* fromFile(PL lang, const char *file);
+    QUARRY_EXPORT void* fromString(PL lang, const unsigned char *byteArray, unsigned long length, int line, int column);
+    QUARRY_EXPORT Token* nextToken(void *quarry);
+    QUARRY_EXPORT void closeQuarry(void *opaque);
+
 }

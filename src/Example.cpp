@@ -14,87 +14,12 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include <iostream>
 #include <string>
 #define QUARRY_EXPORT
-#include "Quarry.h"
+#include "QToken.h"
 #include <chrono>
-
-    enum TokenType {
-        ERROR,
-        KEYWORD,
-        IDENT,
-        STRING,
-        CHAR,
-        NUMBER,
-        OPERATOR,
-        OPEN_BRACE,
-        CLOSE_BRACE,
-        OPEN_BRACKET,
-        CLOSE_BRACKET,
-        SQUARE_OPEN,
-        SQUARE_CLOSE,
-        DOT,
-        COLON,
-        SEMI_COLON,
-        QUESTION_MARK,
-        COMMA,
-        COMMENT,
-        WHITESPACE,
-        NEWLINE,
-        META_ID,
-        BOOL,
-        QEOF
-    };
-
-static std::string  tokenTypeStrs[] = {
-    "ERROR",
-    "KEYWORD",
-    "IDENT",
-    "STRING",
-    "CHAR",
-    "NUMBER",
-    "OPERATOR",
-    "OPEN_BRACE",
-    "CLOSE_BRACE",
-    "OPEN_BRACKET",
-    "CLOSE_BRACKET",
-    "SQUARE_OPEN",
-    "SQUARE_CLOSE",
-    "DOT",
-    "COLON",
-    "SEMI_COLON",
-    "QUESTION_MARK",
-    "COMMA",
-    "COMMENT",
-    "WHITESPACE",
-    "NEWLINE",
-    "META_ID",
-    "BOOL",
-    "QEOF"
-    };
-
-void printSlab(struct quarry_Token *slab){
-  int index = 0;
-  if(slab == NULL){
-      std::cout << "NULL\n";
-  }
-  std::cout <<"slab{";
-  std::cout <<"line = " << slab->line << ";";
-  std::cout <<"col =" << slab->column << ";";
-  std::cout <<"length = " << slab->length << ";";
-  std::cout <<"content = {";
-  for(index = 0;index < slab->length;index++){
-    if(slab->textPtr[index] != '\n')
-	std::cout << slab->textPtr[index];
-    else
-      std::cout <<"\\n";
-  }
-  std::cout <<"}";
-  std::cout <<"tokenType = "<< tokenTypeStrs[slab->tokenType];
-  std::cout <<";}" << std::endl;
-}
 
 int main(int argc, char **argv){
   void *reader;
-  struct quarry_Token *slab;
+  Quarry::Token *slab;
   long l = 0;
   int lines = 0;
   int comments  = 0;
@@ -108,23 +33,22 @@ int main(int argc, char **argv){
     toPrint = true;
   }
   auto start = std::chrono::high_resolution_clock::now();
-  reader = quarry_fromFile(1,argv[1]);
+  reader = Quarry::fromFile(Quarry::JAVA,argv[1]);
   while(toContinue){
-    slab = quarry_nextToken(reader);
-    l++;
+      slab = Quarry::nextToken(reader);
+      l++;
 
-    if(toPrint)
-      printSlab(slab);
-    
+      if(toPrint)
+	  slab->writeTo(std::cout);
      
-    if(slab->tokenType == COMMENT)
-      comments++;
-    if(slab->tokenType == QEOF)
-      toContinue = 0;
-    lines = slab->line;
-    quarry_freeToken(slab);
+      if(slab->tokenType == Quarry::COMMENT)
+	  comments++;
+      if(slab->tokenType == Quarry::QEOF)
+	  toContinue = 0;
+      lines = slab->line;
+      delete slab;
   }
-  quarry_close(reader);
+  Quarry::closeQuarry(reader);
   auto finish = std::chrono::high_resolution_clock::now();
   std::cout << "slabs = " << l << std::endl;
   std::cout << "lines = " << lines << std::endl;

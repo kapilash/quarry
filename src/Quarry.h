@@ -23,6 +23,7 @@ extern "C" {
 	unsigned int tokenType;
 	size_t length;
 	unsigned char *textPtr;
+	void *opaque;
     };
 
     QUARRY_EXPORT void *quarry_fromFile(int lang, const char *fileName);
