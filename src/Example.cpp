@@ -13,13 +13,15 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 
 #include <iostream>
 #include <string>
+
+// For now, we need these two:
 #define QUARRY_EXPORT
 #include "QToken.h"
+
 #include <chrono>
 
 int main(int argc, char **argv){
-  void *reader;
-  Quarry::Token *slab;
+
   long l = 0;
   int lines = 0;
   int comments  = 0;
@@ -33,24 +35,28 @@ int main(int argc, char **argv){
     toPrint = true;
   }
   auto start = std::chrono::high_resolution_clock::now();
-  reader = Quarry::fromFile(Quarry::JAVA,argv[1]);
+
+  // Initialize the reader
+  auto reader = Quarry::fromFile(Quarry::JAVA,argv[1]);
   while(toContinue){
-      slab = Quarry::nextToken(reader);
+      auto token = Quarry::nextToken(reader);
       l++;
 
       if(toPrint)
-	  slab->writeTo(std::cout);
+	  token->writeTo(std::cout);
      
-      if(slab->tokenType == Quarry::COMMENT)
+      if(token->tokenType == Quarry::COMMENT)
 	  comments++;
-      if(slab->tokenType == Quarry::QEOF)
+
+      if(token->tokenType == Quarry::QEOF)
 	  toContinue = 0;
-      lines = slab->line;
-      delete slab;
+
+      lines = token->line;
+      delete token;
   }
   Quarry::closeQuarry(reader);
   auto finish = std::chrono::high_resolution_clock::now();
-  std::cout << "slabs = " << l << std::endl;
+  std::cout << "tokens = " << l << std::endl;
   std::cout << "lines = " << lines << std::endl;
   std::cout << "comments = " << comments << std::endl;
   std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(finish-start).count() << "ms\n";
