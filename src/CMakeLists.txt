@@ -23,12 +23,6 @@ add_library(quarry SHARED   ${SOURCES})
 GENERATE_EXPORT_HEADER(quarry)
 target_link_libraries(quarry ${Boost_LIBRARIES})
 
-message ("Compiler id is ${CMAKE_CXX_COMPILER_ID}")
-
-add_executable(qexample "Example.cpp")
-
-target_link_libraries(qexample quarry)
-
 install (TARGETS quarry  DESTINATION lib)
 install (FILES Quarry.h DESTINATION include)
 install (FILES QToken.h DESTINATION include)
