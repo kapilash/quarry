@@ -24,20 +24,25 @@ newtype QReader = QReader (Ptr QReader)
 newtype QToken = QToken (Ptr QToken)
 
 fromFile :: FilePath -> QLang -> IO QReader
-fromFile file lang = undefined
+fromFile file lang = withCAString file $ \x -> do
+   r <- _fromFile lang x
+   return $ QReader r
+  
 
 
 fromText :: Txt.Text -> QLang -> IO QReader
 fromText txt lang = undefined
 
+closeReader :: QReader -> IO  ()
+closeReader (QReader r) = _close r 
 
-foreign import ccall "Quarry.h quarry_Close"
+foreign import ccall "Quarry.h quarry_close"
         _close :: Ptr QReader -> IO ()
 
 foreign import ccall "Quarry.h quarry_fromFile"
         _fromFile :: QLang ->CString -> IO (Ptr QReader)
 
-foreign import ccall "Quarry.h quarry_fromString"
+foreign import ccall "Quarry.h quarry_fromStr"
         _fromString :: QLang -> CString -> CInt -> CInt -> CInt -> IO (Ptr QReader)                     
 
 foreign import ccall "Quarry.h quarry_nextToken"
@@ -52,19 +57,36 @@ data NativeToken = SimpleToken !Int !Int !Int
                    | TokenWithText !Int !Int !Int !Txt.Text
                   deriving (Eq, Show)
 
-peekNextToken :: QReader -> IO NativeToken
-peekNextToken (QReader reader) = do
+isEOF (SimpleToken _ _ i) = i > 22
+isEOF (TokenWithText _ _ i _) = i > 22
+
+readNextToken :: QReader -> IO NativeToken
+readNextToken (QReader reader) = do
   ptr <- _nextToken reader
-  line <- #{peek struct quarry_Token, line}
-  col  <- #{peek struct quarry_Token, column}
-  tokenType <- #{peek struct quarry_Token, tokenType}
-  tokLen    <- #{peek struct quarry_Token, length}
-  tptr       <- #{peek struct quarry_Token, textPtr}
-  opq       <- #{peek struct quarry_Token, opaque}
+  line  <- #{peek struct quarry_Token, line} ptr 
+  col  <- #{peek struct quarry_Token, column} ptr
+  tokenType <- #{peek struct quarry_Token, tokenType} ptr
+  tokLen    <- #{peek struct quarry_Token, length} ptr
+  tptr       <- #{peek struct quarry_Token, textPtr} ptr
   txt      <- TF.peekCStringLen (tptr,tokLen)
   _freeToken ptr
   return $ TokenWithText line col tokenType txt
 
+
+printTokens :: QReader -> IO ()
+printTokens q = do
+  t <- readNextToken q
+  if (isEOF t)
+     then return ()
+    else do
+    print t
+    printTokens q
+
+testFile :: FilePath -> IO ()
+testFile s = do
+  r <- fromFile s qJava
+  printTokens r
+  closeReader r
 
 {-
 
