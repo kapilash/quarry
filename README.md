@@ -34,13 +34,14 @@ Create a directory in the root folder (or any other place actually).
 
 > mkdir build
 
+
+and then run cmake
+
+> cmake .. -G "Your Generator" [-DBOOST_DIR=path-to-boost-build-dir]
+
 Move to the build folder and use your favourite generator. For unix like systems, if boost is *installed*,  you do not need to provide a value to  BOOST_DIR.
 On windows with visual studio, you may have to. Typically, the value is the directory where you've built your boost sources.
-
-For mingw on windows, if you are using  this awesome version of mingw (http://www.nuwen.net/mingw.html), you just need to use the MSys generator. 
-
-> cmake .. -G <Your Generator> [-DBOOST_DIR=path-to-boost-build-dir]
-
+For mingw on windows, if you are using  this awesomely packaged mingw (http://www.nuwen.net/mingw.html), you just need to use the MSys generator. 
 
 Building the example in the example directory is a little crude, for now. Just look at the CMakeLists.txt or modify it appropriately.
 
