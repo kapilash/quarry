@@ -8,20 +8,30 @@ namespace Check
 {
     public enum SlabType
     {
-        Error,
-        Keyword,
-        Identifier,
+        ERROR,
+        KEYWORD,
+        IDENT,
         STRING,
         CHAR,
-        Numbers,
-        Operator,
-        Grouping,
-        Punctuation,
-        Comment,
-        Whitespace,
-        NewLine,
-        MetaId,
-        EOF
+        NUMBER,
+        OPERATOR,
+        OPEN_BRACE,
+        CLOSE_BRACE,
+        OPEN_BRACKET,
+        CLOSE_BRACKET,
+        SQUARE_OPEN,
+        SQUARE_CLOSE,
+        DOT,
+        COLON,
+        SEMI_COLON,
+        QUESTION_MARK,
+        COMMA,
+        COMMENT,
+        WHITESPACE,
+        NEWLINE,
+        META_ID,
+        BOOL,
+        QEOF
     }
     
     [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
@@ -34,13 +44,23 @@ namespace Check
         internal IntPtr content;
         internal UInt32 slabMD;
     }
-    public class Slab
+
+    [StructLayout(LayoutKind.Sequential,CharSet = CharSet.Ansi)]
+    class NativeToken
+    {
+        internal int line;
+        internal int column;
+        internal int tokenType;
+        internal int length;
+        internal IntPtr text;
+        internal IntPtr opaque;
+    }
+    public class Token
     {
         public int Line { get; set; }
         public int Column { get; set; }
         public string Text { get; set; }
         public SlabType slabType { get; set; }
-        public UInt32 Metadata { get; set; }
 
         public override string ToString()
         {
@@ -50,10 +70,10 @@ namespace Check
             text.Append(this.Column);
             text.Append(']');
             text.Append(Text);
-            text.Append(" ::");
+            text.Append("(");
             text.Append(this.slabType);
-            text.Append(" with ");
-            text.Append(this.Metadata);
+            text.Append(')');
+            text.Append(this.Text);
             text.Append("}");
             return text.ToString();
         }

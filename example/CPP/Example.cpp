@@ -15,7 +15,6 @@ The name of the Hemanth Kapila may NOT be used to endorse or promote products de
 #include <string>
 
 // For now, we need these two:
-#define QUARRY_EXPORT
 #include "QToken.h"
 
 #include <chrono>
