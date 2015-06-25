@@ -53,8 +53,8 @@ foreign import ccall "Quarry.h quarry_freeToken"
 
                       
 
-data NativeToken = SimpleToken !Int !Int !Int 
-                   | TokenWithText !Int !Int !Int !Txt.Text
+data NativeToken = SimpleToken !CInt !CInt !CInt 
+                   | TokenWithText !CInt !CInt !CInt !Txt.Text
                   deriving (Eq, Show)
 
 isEOF (SimpleToken _ _ i) = i > 22
