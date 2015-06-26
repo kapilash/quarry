@@ -33,7 +33,11 @@ extern "C" {
 
     QUARRY_EXPORT void quarry_freeToken(struct quarry_Token *t);
 
+  QUARRY_EXPORT void quarry_moveToStr(void *quarry, const unsigned char *byteArray, unsigned long length, int l, int col);
+  QUARRY_EXPORT void quarry_moveToFile(void *quarry, const char *fileName);
     QUARRY_EXPORT void quarry_close(void *p);
+
+    
 
 #ifdef __cplusplus    
 }

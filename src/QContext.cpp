@@ -67,20 +67,35 @@ namespace Quarry{
 
     class QuarryHolder {
     public:
-	QReader reader;
+	QReader *reader;
 	QContext context;
 
 	QuarryHolder(PL lang, const char *fileName)
-	    : reader{fileName},
+	  : reader{new QReader(fileName)},
 	      context(lang)
 	{
 	}
 	QuarryHolder(PL lang, const unsigned char *byteArray, unsigned long length, int l, int col)
-	    :reader(byteArray,length, l, col),
+	  :reader(new QReader(byteArray,length, l, col)),
 	     context(lang)
 	{
 	}
-	~QuarryHolder() {}
+
+      void moveToFile(const char *fileName){
+	delete reader;
+	reader = new QReader(fileName);
+      }
+
+      void moveToText(const unsigned char *byteArray, unsigned long length, int l, int col) {
+	delete reader;
+	reader = new QReader(byteArray, length, l, col);
+      }
+      
+	~QuarryHolder() {
+	  if (reader != nullptr) {
+	    delete reader;
+	  }
+	}
     };
 
     void* fromFile(PL lang, const char *fileName) {
@@ -94,14 +109,25 @@ namespace Quarry{
 	return holder;
     }
 
+  void moveToFile(void *quarry, const char *fileName) {
+    QuarryHolder *holder = reinterpret_cast<QuarryHolder *>(quarry);
+    holder->moveToFile(fileName);
+  }
+
+  void moveToText(void *quarry,const unsigned char *byteArray, unsigned long length, int l, int col)
+  {
+    QuarryHolder *holder = reinterpret_cast<QuarryHolder *>(quarry);
+    holder->moveToText(byteArray, length, l, col);
+  }
+  
     Token* nextToken(void *quarry) {
 	QuarryHolder *holder = reinterpret_cast<QuarryHolder *>(quarry);
-	if(holder->reader.hasMore()) {
-	    unsigned char c = holder->reader.peekNext();
+	if(holder->reader->hasMore()) {
+	    unsigned char c = holder->reader->peekNext();
 	    Lexer l = holder->context.lexer(c);
-	    return l(holder->reader, holder->context);
+	    return l(*(holder->reader), holder->context);
 	}
-	return new Token(holder->reader.getLine(), holder->reader.getCol(), QEOF,0, nullptr);
+	return new Token(holder->reader->getLine(), holder->reader->getCol(), QEOF,0, nullptr);
 	    
     }
 
@@ -119,6 +145,17 @@ void *quarry_fromFile(int lang, const char *fileName)
 void *quarry_fromStr(int lang, const unsigned char *byteArray, unsigned long length, int l, int col)
 {
     return Quarry::fromStr((Quarry::PL)lang, byteArray, length, l, col);
+}
+
+
+void quarry_moveToFile(void *quarry, const char *fileName)
+{
+    Quarry::moveToFile(quarry, fileName);
+}
+
+void quarry_moveToStr(void *quarry, const unsigned char *byteArray, unsigned long length, int l, int col)
+{
+  Quarry::moveToText(quarry, byteArray, length, l, col);
 }
 
 void quarry_close(void *p) {
