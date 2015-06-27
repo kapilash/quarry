@@ -33,12 +33,21 @@ extern "C" {
 
     QUARRY_EXPORT void quarry_freeToken(struct quarry_Token *t);
 
-  QUARRY_EXPORT void quarry_moveToStr(void *quarry, const unsigned char *byteArray, unsigned long length, int l, int col);
-  QUARRY_EXPORT void quarry_moveToFile(void *quarry, const char *fileName);
+    QUARRY_EXPORT void quarry_moveToStr(void *quarry, const unsigned char *byteArray, unsigned long length, int l, int col);
+    QUARRY_EXPORT void quarry_moveToFile(void *quarry, const char *fileName);
     QUARRY_EXPORT void quarry_close(void *p);
 
+    QUARRY_EXPORT unsigned int quarry_numberType(struct quarry_Token *token);
+    QUARRY_EXPORT int quarry_toInt(struct quarry_Token *token);
+    /*    QUARRY_EXPORT unsigned int quarry_toUnsignedInt(struct quarry_Token *token);
+    QUARRY_EXPORT unsigned long long quarry_toUnsignedLongLong(struct quarry_Token *token);
+    QUARRY_EXPORT unsigned long quarry_toUnsignedLong(struct quarry_Token *token);
+    QUARRY_EXPORT long long quarry_toLongLong(struct quarry_Token *token);
+    QUARRY_EXPORT long quarry_toLong(struct quarry_Token *token);
+    QUARRY_EXPORT float quarry_toFloat(struct quarry_Token *token);
+    QUARRY_EXPORT double quarry_toUnsignedLong(struct quarry_Token *token);*/
+    QUARRY_EXPORT unsigned int quarry_toChar(struct quarry_Token *token); 
     
-
 #ifdef __cplusplus    
 }
 #endif

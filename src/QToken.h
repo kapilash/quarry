@@ -77,7 +77,7 @@ namespace Quarry {
     };
     
     enum QNumberType {
-	QLongDouble,
+	QLongDouble = 1,
 	QDouble,
 	QFloat,
 	QInt,
@@ -89,6 +89,7 @@ namespace Quarry {
     };
 
     static std::string numberTypeStrs[] = {
+	"<Not Number>",
     "Long Double",
     "Double",
     "Float",
@@ -183,6 +184,8 @@ namespace Quarry {
 
     QUARRY_EXPORT void* fromFile(PL lang, const char *file);
     QUARRY_EXPORT void* fromString(PL lang, const unsigned char *byteArray, unsigned long length, int line, int column);
+    QUARRY_EXPORT void moveToFile(void *quarry, const char *fileName);
+    QUARRY_EXPORT void moveToText(void *quarry,const unsigned char *byteArray, unsigned long length, int l, int col);
     QUARRY_EXPORT Token* nextToken(void *quarry);
     QUARRY_EXPORT void closeQuarry(void *opaque);
 

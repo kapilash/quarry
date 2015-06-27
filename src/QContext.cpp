@@ -181,4 +181,32 @@ void  quarry_freeToken(struct quarry_Token *t)
     delete inner;
     delete t;
 }
+
+unsigned int quarry_numberType(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::NumericalToken *numeric = dynamic_cast<Quarry::NumericalToken *>(inner);
+    if (numeric == nullptr) {
+	return 0;
+    }
+    return (unsigned int)(numeric->numberType);
+}
+
+unsigned int quarry_toChar(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::CharToken *charToken = dynamic_cast<Quarry::CharToken *>(inner);
+    if (charToken == nullptr) {
+	return 0;
+    }
+    return charToken->value;
+}
+
+int quarry_toInt(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::IntToken *intToken = dynamic_cast<Quarry::IntToken *>(inner);
+    if (intToken == nullptr) {
+	return 0;
+    }
+    return intToken->value;
+}
+
 //}

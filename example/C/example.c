@@ -87,6 +87,36 @@ void printSlab(struct quarry_Token *slab){
   }
   printf("}");
   printf("tokenType = %s", tokenTypeStrs[slab->tokenType]);
+  if (slab->tokenType == NUMBER) {
+      unsigned int numberType = quarry_numberType(slab);
+      printf("[");
+      switch(numberType) {
+      case 1 : printf("Long Double");
+	  break;
+      case 2: printf("Double");
+	  break;
+      case 3: printf("Float");
+	  break;
+      case 4: printf("int(%d)", quarry_toInt(slab));
+	  break;
+      case 5: printf("Long");
+	  break;
+      case 6: printf("Long Long");
+	  break;
+      case 7: printf("unsigned int");
+	  break;
+      case 8: printf("unsigned long");
+	  break;
+      case 9: printf("unsigned long long");
+	  break;
+      default:
+	  printf("NOt number");
+      }
+      printf("]");
+  }
+  else if(slab->tokenType == CHAR) {
+      printf("[value=%d]", quarry_toChar(slab));
+  }
   printf(";}\n");
 }
 
