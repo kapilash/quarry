@@ -209,4 +209,66 @@ int quarry_toInt(struct quarry_Token *token) {
     return intToken->value;
 }
 
+unsigned int quarry_toUInt(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::UIntToken *intToken = dynamic_cast<Quarry::UIntToken *>(inner);
+    if (intToken == nullptr) {
+	return 0;
+    }
+    return intToken->value;
+}
+
+long long quarry_toLong(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::LongToken *longToken = dynamic_cast<Quarry::LongToken *>(inner);
+    if (longToken != nullptr) {
+	return longToken->value;
+    }
+
+    Quarry::LongLongToken *longLongToken = dynamic_cast<Quarry::LongLongToken *>(inner);
+    if (longLongToken != nullptr) {
+	return longLongToken->value;
+    }
+    return 0L;
+}
+
+unsigned long long quarry_toULong(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::ULongToken *ulongToken = dynamic_cast<Quarry::ULongToken *>(inner);
+    if (ulongToken != nullptr) {
+	return ulongToken->value;
+    }
+
+    Quarry::ULongLongToken *ullToken = dynamic_cast<Quarry::ULongLongToken *>(inner);
+    if (ullToken != nullptr) {
+	return ullToken->value;
+    }
+    return 0;
+}
+
+float quarry_toFloat(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+    Quarry::FlToken *floatToken = dynamic_cast<Quarry::FlToken *>(inner);
+    if (floatToken != nullptr) {
+	return floatToken->value;
+    }
+    return 0;
+}
+
+double quarry_toCDouble(struct quarry_Token *token) {
+    Quarry::Token *inner = reinterpret_cast<Quarry::Token *>(token->opaque);
+
+    Quarry::DblToken *dblToken = dynamic_cast<Quarry::DblToken *>(inner);
+    if (dblToken != nullptr) {
+	return dblToken->value;
+    }
+
+    Quarry::LDblToken *lDblToken = dynamic_cast<Quarry::LDblToken *>(inner);
+    if (lDblToken != nullptr) {
+	return lDblToken->value;
+    }
+    return 0;
+}
+
+
 //}

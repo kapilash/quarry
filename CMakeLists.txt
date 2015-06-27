@@ -8,7 +8,6 @@ find_package(Boost 1.56 REQUIRED COMPONENTS system filesystem unit_test_framewor
 
 include_directories (${PROJECT_SOURCE_DIR}/inc ${PROJECT_BINARY_DIR}/src ${Boost_INCLUDE_DIR})
 include(GenerateExportHeader)
-#ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
 link_directories(${Boost_LIBRARY_DIR})
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
