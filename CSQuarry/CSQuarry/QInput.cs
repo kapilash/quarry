@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (c) Hemanth Kapila
 All rights reserved.
 
@@ -10,35 +10,34 @@ The name of Hemanth Kapila may NOT be used to endorse or promote products derive
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+namespace CSQuarry
+{
+    using System;
+    using System.Collections.Generic;
+    interface QInput  : IEnumerator<char>
+    {
+        /// <summary>
+        /// Returns number of characters to be read before we find one that macthes the given predicate.
+        /// </summary>
+        /// <param name="predicate">predicate</param>
+        /// <returns>number of bytes</returns>
+        int Till(Predicate<char> predicate);
 
-#include "QToken.h"
-#include "QReader.h"
+        /// <summary>
+        /// Number of bytes that match the given predicate
+        /// </summary>
+        /// <param name="predicate">condition that needs to be satisfied</param>
+        /// <returns>number of characters</returns>
+        int WhileTrue(Predicate<char> predicate);
 
-namespace Quarry {
-    enum TokenStyle {
-	CStyle,
-	CSharpStyle,
-	HaskellStyle,
-	R6RSStyle,
-	TeXStyle,
-	LaTeXStyle,
-	HTMLStyle
-    };
-    
-    class QContext{
-    private:
-	const TokenStyle style;
-	
-    public:
-	QContext (TokenStyle style);
-	
-	/// Idea is, given this tokenType, QContext knows how to construct
-	/// the appropriate version of the token for the appropriate language.
-	///  This works out for identifiers, keywords, comments, punctuation, etc.
-	Token* makeToken(unsigned char *start, size_t length, TokenType tokenType);
+        /// <summary>
+        /// Look at the nextChar without incrementing the counter
+        /// </summary>
+        /// <returns>the nextChar. Char.MinValue at EOF</returns>
+        char Peek();
 
-	// When the lexer knows exactly the token to be constructed.
-	Token* toToken(unsigned char *start, size_t length, int number);
-    };
+        int Line { get; }
+
+        int Column { get; }
+    }
 }
