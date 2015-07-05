@@ -2,12 +2,31 @@ module Main where
 
 import Language.Tokenizer.Internal
 import System.Environment (getArgs)
+import qualified Data.Iteratee as I
 
+isSpaceToken :: NativeToken -> Bool
+isSpaceToken (NToken _ _ i _) = i == 19
 
+isCommentToken :: NativeToken -> Bool
+isCommentToken (NToken _ _ i _) = i == 18
+
+tokenCount :: (Monad m) => I.Iteratee [NativeToken] m Int
+tokenCount = I.length
+
+spaceAndComments :: I.Iteratee [NativeToken] IO (Int,Int)
+spaceAndComments = I.zip (I.joinI $ I.filter isSpaceToken tokenCount) (I.joinI $ I.filter isCommentToken tokenCount)
+
+printCounts:: FilePath -> IO ()
+printCounts f = do
+  (c,b) <- fileDriver 100 f qJava spaceAndComments
+  putStrLn $ "Comments " ++ (show b)
+  putStrLn $ "Spaces " ++ (show c)
+
+main :: IO()
 main = do
   args <- getArgs
   case args of
-   [f]  -> testFile f
+   [f]  -> printCounts f        
    _    -> putStrLn "Need One File"
 
 

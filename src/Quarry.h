@@ -29,6 +29,9 @@ extern "C" {
 				    **NOTE** The text is not a C string. It does not end with '\0' */
 	void *opaque; /**< An internal pointer */
     };
+    typedef struct quarry_Token quarry_TokenStr;
+
+
 
     /** \brief construct a quarry instance from a file.
 

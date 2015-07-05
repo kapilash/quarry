@@ -9,6 +9,10 @@ import qualified Data.Text.Encoding as E
 import qualified Data.Text.Foreign as TF
 import Foreign.Storable
 import Foreign.C.String
+import qualified Data.Iteratee as Iter
+import Control.Exception
+import Data.NullPoint
+import Control.Monad.IO.Class
 
 #include <Quarry.h>
 
@@ -53,12 +57,17 @@ foreign import ccall "Quarry.h quarry_freeToken"
 
                       
 
-data NativeToken = SimpleToken !CInt !CInt !CInt 
-                   | TokenWithText !CInt !CInt !CInt !Txt.Text
+data NativeToken = NToken !CInt !CInt !CInt !Txt.Text
                   deriving (Eq, Show)
 
-isEOF (SimpleToken _ _ i) = i > 22
-isEOF (TokenWithText _ _ i _) = i > 22
+
+instance Exception NativeToken
+
+{-
+instance NullPoint NativeToken where
+  empty = NToken 0 0 (-1) (Txt.empty) -}
+
+isEOF (NToken _ _ i _) = i > 22
 
 readNextToken :: QReader -> IO NativeToken
 readNextToken (QReader reader) = do
@@ -70,9 +79,52 @@ readNextToken (QReader reader) = do
   tptr       <- #{peek struct quarry_Token, textPtr} ptr
   txt      <- TF.peekCStringLen (tptr,tokLen)
   _freeToken ptr
-  return $ TokenWithText line col tokenType txt
+  return $ NToken line col tokenType txt
 
 
+readNTokens :: Int -> QReader -> IO (Either SomeException [NativeToken])
+readNTokens 0 _  = return $ Right []
+readNTokens num (QReader reader) = do
+  ptr <- _nextToken reader
+  line  <- #{peek struct quarry_Token, line} ptr 
+  col  <- #{peek struct quarry_Token, column} ptr
+  tokenType <- #{peek struct quarry_Token, tokenType} ptr
+  tokLen    <- #{peek struct quarry_Token, length} ptr
+  tptr       <- #{peek struct quarry_Token, textPtr} ptr
+  txt      <- TF.peekCStringLen (tptr,tokLen)
+  _freeToken ptr
+  if tokenType < 1
+     then return $ Left . toException $ NToken line col tokenType txt
+    else if (tokenType > 22)
+         then return $ Right []
+         else do
+           rems <- readNTokens (num - 1) (QReader reader)
+           case rems of
+                Right remTokens -> return . Right $ (NToken line col tokenType txt) : remTokens
+                x               -> return x
+
+
+readCallback :: Int -> QReader -> IO (Either SomeException ((Bool, QReader), [NativeToken]))
+readCallback n  qr@(QReader reader) = do
+  etokens <- readNTokens n qr
+  case etokens  of
+   Right []   -> return $ Right ((True, qr), [])
+   Right (tokens) -> return $ Right (((length tokens) == n, qr), tokens)
+   Left x              -> return (Left x)
+
+
+
+enumFile :: Int -> FilePath -> QLang -> Iter.Enumerator [NativeToken] IO a
+enumFile i filePath lang iter = bracket
+                                (fromFile filePath lang)
+                                (closeReader)
+                                (\r -> Iter.enumFromCallback (readCallback i)  r iter)
+
+fileDriver :: Int ->  FilePath -> QLang -> Iter.Iteratee [NativeToken] IO a -> IO a
+fileDriver num filePath lang iter = do
+   i <- bracket  (fromFile filePath lang)  closeReader (\r -> Iter.enumFromCallback (readCallback num) r iter)
+   Iter.run i
+                                
 printTokens :: QReader -> IO ()
 printTokens q = do
   t <- readNextToken q
@@ -82,27 +134,35 @@ printTokens q = do
     print t
     printTokens q
 
+
+
 testFile :: FilePath -> IO ()
 testFile s = do
   r <- fromFile s qJava
   printTokens r
   closeReader r
 
-{-
+#let alignment t = "%lu", (unsigned long)offsetof(struct {char x__; t (y__); }, y__)
 
 instance Storable NativeToken where
-  sizeof _ = #{size quarry_Token}
-  alignment _ = #{alignment quarry_Token}
+  sizeOf _ = #{size quarry_TokenStr}
+  alignment _ = #{alignment quarry_TokenStr}
   peek ptr  = do
-    line <- #{peek quarry_Token, line}
-    col  <- #{peek quarry_Token, column}
-    tokenType <- #{peek quarry_Token, tokenType}
-    tokLen    <- #{peek quarry_Token, length}
-    tptr       <- #{peek quarry_Token, textPtr}
-    opq       <- #{peek quarry_Token, opaque}
-    txt      <- TF.peekCStringLen (tptr,tokLen)
-    return $ NativeToken line col tokenType txt
-  poke ptr (NativeToken line col tokenType txt
-    
+      line  <- #{peek struct quarry_Token, line} ptr 
+      col  <- #{peek struct quarry_Token, column} ptr
+      tokenType <- #{peek struct quarry_Token, tokenType} ptr
+      tokLen    <- #{peek struct quarry_Token, length} ptr
+      tptr       <- #{peek struct quarry_Token, textPtr} ptr
+      txt      <- TF.peekCStringLen (tptr,tokLen)
+      return $ NToken line col tokenType txt
+
+  poke ptr (NToken line col tokenType txt) = TF.withCStringLen txt $ \(tptr,tokLen) -> do
+    #{poke struct quarry_Token, line} ptr line
+    #{poke struct quarry_Token, column} ptr col
+    #{poke struct quarry_Token, tokenType} ptr tokenType
+    #{poke struct quarry_Token, length} ptr tokLen
+    #{poke struct quarry_Token, textPtr} ptr tptr
+
+
   
--}
+    
