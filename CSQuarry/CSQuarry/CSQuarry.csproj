@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileInput.cs" />
     <Compile Include="Interop.cs" />
     <Compile Include="LangType.cs" />
     <Compile Include="NQuarry.cs" />

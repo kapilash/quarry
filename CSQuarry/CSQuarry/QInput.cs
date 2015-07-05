@@ -20,15 +20,15 @@ namespace CSQuarry
         /// Returns number of characters to be read before we find one that macthes the given predicate.
         /// </summary>
         /// <param name="predicate">predicate</param>
-        /// <returns>number of bytes</returns>
-        int Till(Predicate<char> predicate);
+        /// <returns>text not matching the predicate</returns>
+        string Till(Predicate<char> predicate);
 
         /// <summary>
         /// Number of bytes that match the given predicate
         /// </summary>
         /// <param name="predicate">condition that needs to be satisfied</param>
-        /// <returns>number of characters</returns>
-        int WhileTrue(Predicate<char> predicate);
+        /// <returns>text with characters matching given predicate</returns>
+        string WhileTrue(Predicate<char> predicate);
 
         /// <summary>
         /// Look at the nextChar without incrementing the counter
