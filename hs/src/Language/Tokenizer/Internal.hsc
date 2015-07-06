@@ -83,9 +83,9 @@ readNextToken (QReader reader) = do
   return $ NToken line col tokenType txt
 
 
-readNTokens :: Int -> QReader -> IO (Either SomeException [NativeToken])
-readNTokens 0 _  = return $ Right []
-readNTokens num (QReader reader) = do
+readNTokens :: [NativeToken] -> Int -> QReader -> IO (Either SomeException [NativeToken])
+readNTokens lst 0 _  = return $ Right (reverse lst)
+readNTokens lst num (QReader reader) = do
   ptr <- _nextToken reader
   line  <- #{peek struct quarry_Token, line} ptr 
   col  <- #{peek struct quarry_Token, column} ptr
@@ -97,17 +97,14 @@ readNTokens num (QReader reader) = do
   if tokenType < 1
      then return $ Left . toException $ NToken line col tokenType txt
     else if (tokenType > 22)
-         then return $ Right []
-         else do
-           rems <- readNTokens (num - 1) (QReader reader)
-           case rems of
-                Right remTokens -> return . Right $ (NToken line col tokenType txt) : remTokens
-                x               -> return x
+         then return $ Right (reverse lst)
+         else readNTokens ((NToken line col tokenType txt):lst) (num - 1) (QReader reader)
+
 
 
 readCallback :: (MonadIO m) => Int -> QReader -> m (Either SomeException ((Bool, QReader), [NativeToken]))
 readCallback n  qr@(QReader reader) = do
-  etokens <- liftIO $ readNTokens n qr
+  etokens <- liftIO $ readNTokens [] n qr
   case etokens  of
    Right []   -> return $ Right ((True, qr), [])
    Right (tokens) -> return $ Right (((length tokens) == n, qr), tokens)

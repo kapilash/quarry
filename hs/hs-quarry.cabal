@@ -87,7 +87,8 @@ Test-Suite dummy
                   text  >= 1.2 && < 2.0,
                   hs-quarry,
                   transformers,
-                  iteratee >= 0.8
+                  iteratee >= 0.8,
+                  timeit
     default-language:   Haskell2010
                   
     GHC-Options:
