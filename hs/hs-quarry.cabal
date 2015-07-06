@@ -65,8 +65,8 @@ library
                        bytestring >= 0.10 && < 0.12,
                        text >= 1.2 && < 2.0,
                        transformers,
-                       iteratee >= 0.8
-  
+                       iteratee >= 0.8,
+                       exceptions
   -- Directories containing source files.
   hs-source-dirs:      src
   

@@ -13,6 +13,7 @@ import qualified Data.Iteratee as Iter
 import Control.Exception
 import Data.NullPoint
 import Control.Monad.IO.Class
+import qualified Control.Monad.Catch as CIO    
 
 #include <Quarry.h>
 
@@ -104,9 +105,9 @@ readNTokens num (QReader reader) = do
                 x               -> return x
 
 
-readCallback :: Int -> QReader -> IO (Either SomeException ((Bool, QReader), [NativeToken]))
+readCallback :: (MonadIO m) => Int -> QReader -> m (Either SomeException ((Bool, QReader), [NativeToken]))
 readCallback n  qr@(QReader reader) = do
-  etokens <- readNTokens n qr
+  etokens <- liftIO $ readNTokens n qr
   case etokens  of
    Right []   -> return $ Right ((True, qr), [])
    Right (tokens) -> return $ Right (((length tokens) == n, qr), tokens)
@@ -120,10 +121,15 @@ enumFile i filePath lang iter = bracket
                                 (closeReader)
                                 (\r -> Iter.enumFromCallback (readCallback i)  r iter)
 
-fileDriver :: Int ->  FilePath -> QLang -> Iter.Iteratee [NativeToken] IO a -> IO a
+{-fileDriver :: Int ->  FilePath -> QLang -> Iter.Iteratee [NativeToken] IO a -> IO a
 fileDriver num filePath lang iter = do
    i <- bracket  (fromFile filePath lang)  closeReader (\r -> Iter.enumFromCallback (readCallback num) r iter)
-   Iter.run i
+   Iter.run i -}
+
+fileDriver :: (MonadIO m, CIO.MonadMask m) => Int ->  FilePath -> QLang -> Iter.Iteratee [NativeToken] m a -> m a
+fileDriver num filePath lang iter = do
+   i <- CIO.bracket  (liftIO $ fromFile filePath lang)  (liftIO . closeReader) (\r -> Iter.enumFromCallback (readCallback num) r iter)
+   Iter.run i       
                                 
 printTokens :: QReader -> IO ()
 printTokens q = do
