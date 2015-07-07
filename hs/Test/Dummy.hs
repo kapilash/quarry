@@ -6,10 +6,10 @@ import qualified Data.Iteratee as I
 import System.TimeIt    
 
 isSpaceToken :: NativeToken -> Bool
-isSpaceToken (NToken _ _ i _) = i == 19
+isSpaceToken (NToken _ _ i _ _) = i == 19
 
 isCommentToken :: NativeToken -> Bool
-isCommentToken (NToken _ _ i _) = i == 18
+isCommentToken (NToken _ _ i _ _) = i == 18
 
 tokenCount :: (Monad m) => I.Iteratee [NativeToken] m Int
 tokenCount = I.length
@@ -24,11 +24,16 @@ printCounts f = do
   putStrLn $ "Spaces " ++ (show c)
   putStrLn $ "tokens " ++ (show d)           
 
+
+printTokens :: FilePath -> IO ()
+printTokens f =   timeIt (fileDriver 100 f qJava (I.mapM_ print))
+
 main :: IO()
 main = do
   args <- getArgs
   case args of
    [f]  -> printCounts f
+   [f,_] -> printTokens f
    _    -> putStrLn "Need One File"
 
 
