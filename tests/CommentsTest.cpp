@@ -64,14 +64,12 @@ BOOST_AUTO_TEST_CASE (nestedBlockComment)
     Quarry::QContext context(Quarry::C);
     auto slab = comments(qr, context);
     BOOST_CHECK(slab != nullptr);
-    //BOOST_CHECK(slab->value.length() == 4607);
     BOOST_CHECK(slab->tokenType == Quarry::COMMENT);
     std::string leftOver;
     while(qr.hasMore()) {
       leftOver.append(1, qr.next());
     }
     BOOST_CHECK_EQUAL(leftOver.c_str(), "XXXXXXXXXX");
-    slab->writeTo(std::cout);
     delete slab;
 }
 
@@ -88,7 +86,6 @@ BOOST_AUTO_TEST_CASE(java_comments)
 	auto slab = comments(qr, context);
 	BOOST_CHECK(slab != nullptr);
 	BOOST_CHECK(slab->tokenType == Quarry::COMMENT);
-	slab->writeTo(std::cout);
 	commentCount++;
 	delete spaces(qr, context);
 	delete slab;

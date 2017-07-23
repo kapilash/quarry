@@ -1,10 +1,9 @@
 cmake_minimum_required (VERSION 3.0)
 
 project(quarry VERSION 0.5 LANGUAGES C CXX)
-
 Set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.56 REQUIRED COMPONENTS system filesystem unit_test_framework iostreams)
+find_package(Boost 1.64 REQUIRED COMPONENTS system filesystem unit_test_framework iostreams)
 
 include_directories (${PROJECT_SOURCE_DIR}/inc ${PROJECT_BINARY_DIR}/src ${Boost_INCLUDE_DIR})
 include(GenerateExportHeader)
