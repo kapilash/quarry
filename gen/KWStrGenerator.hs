@@ -157,3 +157,4 @@ main = do args <- getArgs
           case args of
            [] -> putStrLn "No input"
            _  -> mapM_ genCode args
+  

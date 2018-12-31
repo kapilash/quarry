@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.13)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
@@ -18,5 +18,6 @@ add_executable(kw
 
 add_executable(kwverify "verify.cpp")
 
-TARGET_LINK_LIBRARIES(kwverify ${Boost_LIBRARIES} )
+target_include_directories(kwverify PUBLIC ${PROJECT_SOURCE_DIR}/inc ${PROJECT_BINARY_DIR}/src ${Boost_INCLUDE_DIR})
+target_link_libraries(kwverify PRIVATE ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} )
 

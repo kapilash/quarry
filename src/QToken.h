@@ -19,7 +19,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 namespace Quarry {
     enum PL {
 	C = 0,
-	JAVA
+	JAVA,
+	R7RS
     };
 
     enum TokenType {

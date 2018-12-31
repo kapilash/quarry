@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.13)
 
 
 configure_file(HugeJavaIn HugeJavaIn COPYONLY)
@@ -14,8 +14,8 @@ add_executable(rtests "rtests.cpp")
 add_executable(comments "CommentsTest.cpp")
 add_executable(misc "TokenTests.cpp")
 
-target_link_libraries(rtests quarry ${Boost_LIBRARIES})
+target_link_libraries(rtests PRIVATE quarry ${Boost_LIBRARIES})
 
-target_link_libraries(comments quarry ${Boost_LIBRARIES})
+target_link_libraries(comments PRIVATE quarry ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
-target_link_libraries(misc quarry ${Boost_LIBRARIES})
+target_link_libraries(misc PRIVATE quarry ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
